@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Portfolio Mock • Tickets</title>
+  <link rel="stylesheet" href="./mock.css">
+</head>
+<body data-page="tickets">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Portfolio Mock</div>
+        </div>
+      </div>
+      <nav class="nav-list">
+        <a class="nav-item" href="./overview.html"><span class="nav-icon">OV</span>Обзор</a>
+        <a class="nav-item" href="./analytics.html"><span class="nav-icon">AN</span>Аналитика</a>
+        <a class="nav-item active" href="./tickets.html"><span class="nav-icon">TK</span>Билеты</a>
+        <a class="nav-item" href="./analytics.html"><span class="nav-icon">ST</span>Статистика</a>
+        <a class="nav-item" href="./tickets.html"><span class="nav-icon">EV</span>Мероприятия</a>
+      </nav>
+      <div class="sidebar-footer">
+        <p class="role-label">Роль</p>
+        <p class="role-value">Administrator (demo)</p>
+        <span class="logout-link">⎋ Выход</span>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <div class="mobile-bar">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Mobile Mock</div>
+        </div>
+      </div>
+
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Билеты</h1>
+          <p class="page-subtitle" id="page-subtitle"></p>
+        </div>
+        <div class="header-actions">
+          <div class="helper-bar">
+            <span class="helper-badge">HTML-мок для безопасных скринов</span>
+            <button class="action-button" id="reroll-data">Перегенерировать</button>
+            <button class="action-button" id="toggle-mask">Маскировать поля</button>
+            <button class="action-button" id="toggle-tools">Скрыть панель</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-scroll">
+        <div class="stack">
+          <section class="ticket-stats" id="ticket-stats"></section>
+
+          <section class="split-layout">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Реестр билетов</h2>
+                  <p class="section-subtitle">Синтетические записи с кликабельным выбором строки</p>
+                </div>
+                <span class="mini-pill">16 строк</span>
+              </div>
+
+              <div class="table-shell">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Покупатель</th>
+                      <th>Мероприятие</th>
+                      <th>Дата покупки</th>
+                      <th>Цена</th>
+                      <th>Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tickets-table-body"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <aside class="card ticket-detail">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Карточка билета</h2>
+                  <p class="section-subtitle">Фейковый QR и безопасные алиасы</p>
+                </div>
+                <div id="detail-status"></div>
+              </div>
+
+              <section class="preview-card">
+                <h3 class="ticket-title" id="detail-title"></h3>
+                <p class="ticket-caption" id="detail-caption"></p>
+                <div class="soft-divider"></div>
+                <div class="qr-frame" id="detail-qr"></div>
+              </section>
+
+              <section class="preview-card">
+                <div class="detail-grid" id="detail-fields"></div>
+              </section>
+            </aside>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./mock.js"></script>
+</body>
+</html>

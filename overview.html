@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Portfolio Mock • Overview</title>
+  <link rel="stylesheet" href="./mock.css">
+</head>
+<body data-page="overview">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Portfolio Mock</div>
+        </div>
+      </div>
+      <nav class="nav-list">
+        <a class="nav-item active" href="./overview.html"><span class="nav-icon">OV</span>Обзор</a>
+        <a class="nav-item" href="./analytics.html"><span class="nav-icon">AN</span>Аналитика</a>
+        <a class="nav-item" href="./tickets.html"><span class="nav-icon">TK</span>Билеты</a>
+        <a class="nav-item" href="./analytics.html"><span class="nav-icon">ST</span>Статистика</a>
+        <a class="nav-item" href="./tickets.html"><span class="nav-icon">EV</span>Мероприятия</a>
+      </nav>
+      <div class="sidebar-footer">
+        <p class="role-label">Роль</p>
+        <p class="role-value">Administrator (demo)</p>
+        <span class="logout-link">⎋ Выход</span>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <div class="mobile-bar">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Mobile Mock</div>
+        </div>
+      </div>
+
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Обзор</h1>
+          <p class="page-subtitle" id="page-subtitle"></p>
+        </div>
+        <div class="header-actions">
+          <div class="helper-bar">
+            <span class="helper-badge">Демо-данные для скринов</span>
+            <button class="action-button" id="reroll-data">Перегенерировать</button>
+            <button class="action-button" id="toggle-mask">Маскировать поля</button>
+            <button class="action-button" id="toggle-tools">Скрыть панель</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-scroll">
+        <div class="stack">
+          <section class="kpi-grid five" id="overview-kpis-primary"></section>
+          <section class="kpi-grid four" id="overview-kpis-secondary"></section>
+          <section class="panel-grid" id="overview-panels"></section>
+
+          <section class="two-column">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">По странам</h2>
+                  <p class="section-subtitle">Синтетическое распределение людей и выручки</p>
+                </div>
+                <span class="mini-pill">Безопасный набор данных</span>
+              </div>
+              <div class="country-list" id="country-breakdown"></div>
+            </article>
+
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h2 class="section-title">Последние билеты</h2>
+                  <p class="section-subtitle">Фейковые покупатели, order id и email-адреса</p>
+                </div>
+                <span class="mini-pill">10 записей</span>
+              </div>
+              <div class="table-shell">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Покупатель</th>
+                      <th>Мероприятие</th>
+                      <th>Дата</th>
+                      <th>Цена</th>
+                      <th>Статус</th>
+                      <th>Order ID</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-tickets-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./mock.js"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Portfolio Mock • Analytics</title>
+  <link rel="stylesheet" href="./mock.css">
+</head>
+<body data-page="analytics">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Portfolio Mock</div>
+        </div>
+      </div>
+      <nav class="nav-list">
+        <a class="nav-item" href="./overview.html"><span class="nav-icon">OV</span>Обзор</a>
+        <a class="nav-item active" href="./analytics.html"><span class="nav-icon">AN</span>Аналитика</a>
+        <a class="nav-item" href="./tickets.html"><span class="nav-icon">TK</span>Билеты</a>
+        <a class="nav-item" href="./analytics.html"><span class="nav-icon">ST</span>Статистика</a>
+        <a class="nav-item" href="./tickets.html"><span class="nav-icon">EV</span>Мероприятия</a>
+      </nav>
+      <div class="sidebar-footer">
+        <p class="role-label">Роль</p>
+        <p class="role-value">Administrator (demo)</p>
+        <span class="logout-link">⎋ Выход</span>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <div class="mobile-bar">
+        <div class="brand-mark">EO</div>
+        <div class="brand-copy">
+          <div class="brand-title">EVENT OPS</div>
+          <div class="brand-subtitle">Mobile Mock</div>
+        </div>
+      </div>
+
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Аналитика</h1>
+          <p class="page-subtitle" id="page-subtitle"></p>
+        </div>
+        <div class="header-actions">
+          <div class="helper-bar">
+            <span class="helper-badge">Синтетические KPI и графики</span>
+            <button class="action-button" id="reroll-data">Перегенерировать</button>
+            <button class="action-button" id="toggle-mask">Маскировать поля</button>
+            <button class="action-button" id="toggle-tools">Скрыть панель</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-scroll">
+        <div class="stack">
+          <section class="kpi-grid eight" id="analytics-kpis"></section>
+
+          <section class="card filter-strip">
+            <select class="action-select" aria-label="Период">
+              <option>За всё время</option>
+              <option>Последние 30 дней</option>
+              <option>Последние 14 дней</option>
+            </select>
+            <select class="action-select" aria-label="Группировка">
+              <option>По дням</option>
+              <option>По неделям</option>
+              <option>По городам</option>
+            </select>
+            <select class="action-select" aria-label="Показатель">
+              <option>Выручка</option>
+              <option>QR-коды</option>
+              <option>Люди</option>
+            </select>
+            <button class="action-button">Сравнить период</button>
+          </section>
+
+          <section class="chart-grid">
+            <article class="chart-card">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Динамика продаж</h3>
+                  <p class="chart-subtitle">Псевдоданные на основе общего seed-набора</p>
+                </div>
+                <span class="mini-pill">Area</span>
+              </div>
+              <div class="chart-body" id="timeline-chart-body"></div>
+            </article>
+
+            <article class="chart-card">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Статусы по времени</h3>
+                  <p class="chart-subtitle">Valid / Used / Cancelled</p>
+                </div>
+                <span class="mini-pill">Stacked</span>
+              </div>
+              <div class="chart-body" id="status-chart-body"></div>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot" style="background:#30D158"></span>Valid</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#FF9500"></span>Used</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#FF453A"></span>Cancelled</span>
+              </div>
+            </article>
+
+            <article class="chart-card">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Выручка по городам</h3>
+                  <p class="chart-subtitle">Топ-6 локаций</p>
+                </div>
+                <span class="mini-pill">Bar</span>
+              </div>
+              <div class="chart-body" id="cities-chart-body"></div>
+            </article>
+
+            <article class="chart-card">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Структура билетов</h3>
+                  <p class="chart-subtitle">Типы билетов без реальных клиентов</p>
+                </div>
+                <span class="mini-pill">Donut</span>
+              </div>
+              <div class="chart-body" id="donut-chart-body"></div>
+              <div class="chart-legend" id="donut-legend"></div>
+            </article>
+
+            <article class="chart-card wide">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Тепловая карта активности</h3>
+                  <p class="chart-subtitle">7 дней × 12 двухчасовых слотов</p>
+                </div>
+                <span class="mini-pill">Heatmap</span>
+              </div>
+              <div class="heatmap" id="heatmap-body"></div>
+            </article>
+
+            <article class="chart-card wide">
+              <div class="chart-head">
+                <div>
+                  <h3 class="chart-title">Топ-покупатели</h3>
+                  <p class="chart-subtitle">Псевдо-алиасы вместо реальных имён</p>
+                </div>
+                <span class="mini-pill">Safe aliases</span>
+              </div>
+              <div class="buyers-list" id="buyers-list"></div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="./mock.js"></script>
+</body>
+</html>
