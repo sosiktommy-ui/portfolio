@@ -154,4 +154,80 @@
   if (document.readyState === 'complete') { showPage(); }
   else { window.addEventListener('load', showPage, { once: true }); setTimeout(showPage, 1800); }
 
+  /* ================================================================
+     i18n — LANGUAGE SWITCHER
+  ================================================================ */
+  (function () {
+    var translations = {
+      en: {
+        'hero.eyebrow': 'Independent full-stack developer',
+        'hero.ctaPrimary': 'See selected builds',
+        'hero.ctaSecondary': 'Get in touch',
+        'systems.eyebrow': 'System range',
+        'capabilities.eyebrow': 'Capabilities',
+        'stack.eyebrow': 'Stack',
+        'lang.switchAria': 'Language switch'
+      },
+      ru: {
+        'hero.eyebrow': 'Независимый full-stack разработчик',
+        'hero.ctaPrimary': 'Посмотреть проекты',
+        'hero.ctaSecondary': 'Связаться',
+        'systems.eyebrow': 'Диапазон систем',
+        'capabilities.eyebrow': 'Возможности',
+        'stack.eyebrow': 'Стек',
+        'lang.switchAria': 'Переключение языка'
+      }
+    };
+
+    var supportedLanguages = new Set(Object.keys(translations));
+    var storageKey = 'portfolioLanguage';
+
+    function resolveInitialLanguage() {
+      var qp = new URLSearchParams(window.location.search).get('lang');
+      if (supportedLanguages.has(qp)) return qp;
+      try {
+        var stored = window.localStorage.getItem(storageKey);
+        if (supportedLanguages.has(stored)) return stored;
+      } catch (e) {}
+      return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+    }
+
+    var currentLanguage = resolveInitialLanguage();
+
+    function t(key) {
+      return (translations[currentLanguage] || {})[key] || (translations.en || {})[key] || key;
+    }
+
+    function syncButtons() {
+      document.querySelectorAll('[data-lang-trigger]').forEach(function (btn) {
+        var active = btn.dataset.langTrigger === currentLanguage;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+    }
+
+    function applyTranslations() {
+      document.documentElement.lang = currentLanguage;
+      document.body.dataset.language = currentLanguage;
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        el.textContent = t(el.dataset.i18n);
+      });
+      document.querySelectorAll('[data-lang-trigger]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var next = btn.dataset.langTrigger;
+          if (!supportedLanguages.has(next) || next === currentLanguage) return;
+          currentLanguage = next;
+          applyTranslations();
+          try { window.localStorage.setItem(storageKey, currentLanguage); } catch (e) {}
+          var url = new URL(window.location.href);
+          url.searchParams.set('lang', currentLanguage);
+          window.history.replaceState({}, '', url);
+        });
+      });
+      syncButtons();
+    }
+
+    applyTranslations();
+  })();
+
 })();
