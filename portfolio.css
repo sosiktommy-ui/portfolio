@@ -34,8 +34,8 @@
   /* Text */
   --text-primary: #F0EEFF;
   --text-secondary: #C4B5FD;
-  --text-muted: #7C6DB5;
-  --text-dim: #4A3D7A;
+  --text-muted: #A899D4;
+  --text-dim: #7B6DB8;
 
   /* Shadows */
   --shadow-card: 0 2px 20px rgba(0,0,0,0.55), 0 0 0 1px rgba(124,58,237,0.25), 0 0 40px rgba(124,58,237,0.08);
@@ -949,20 +949,15 @@ p { margin: 0; color: var(--text-secondary); }
 }
 
 .project-dark {
-  background: linear-gradient(180deg,
-    rgba(124,58,237,0.04) 0%,
-    transparent 30%,
-    transparent 70%,
-    rgba(124,58,237,0.04) 100%
-  );
+  background:
+    linear-gradient(180deg, rgba(124,58,237,0.06) 0%, transparent 30%, transparent 70%, rgba(124,58,237,0.06) 100%),
+    linear-gradient(180deg, rgba(4,0,14,0.42) 0%, rgba(4,0,14,0.42) 100%);
 }
 
 .project-mid {
-  background: linear-gradient(180deg,
-    rgba(14,165,233,0.03) 0%,
-    transparent 50%,
-    rgba(14,165,233,0.03) 100%
-  );
+  background:
+    linear-gradient(180deg, rgba(14,165,233,0.05) 0%, transparent 50%, rgba(14,165,233,0.05) 100%),
+    linear-gradient(180deg, rgba(4,0,14,0.42) 0%, rgba(4,0,14,0.42) 100%);
 }
 
 .project-layout {
@@ -1004,6 +999,23 @@ p { margin: 0; color: var(--text-secondary); }
 .kicker-magenta { background: linear-gradient(90deg, var(--magenta), transparent); }
 
 .project-kicker + h2 { color: var(--text-primary); }
+
+/* Frosted glass panel behind text column — readable over globe */
+.project-copy {
+  position: relative;
+  z-index: 1;
+}
+.project-copy::before {
+  content: '';
+  position: absolute;
+  inset: -40px -32px;
+  background: rgba(4, 0, 14, 0.62);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 28px;
+  z-index: -1;
+  pointer-events: none;
+}
 
 .project-copy h2 { margin-bottom: 20px; font-size: clamp(26px, 3vw, 40px); }
 
@@ -1175,8 +1187,8 @@ p { margin: 0; color: var(--text-secondary); }
 .ai-core {
   padding: 36px;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(192,38,211,0.2);
-  background: rgba(192,38,211,0.05);
+  border: 1px solid rgba(192,38,211,0.25);
+  background: rgba(4, 0, 14, 0.72);
   position: relative;
   overflow: hidden;
 }
@@ -1415,6 +1427,9 @@ p { margin: 0; color: var(--text-secondary); }
 /* ── Process ───────────────────────────────────────────────────── */
 .process-section {
   padding: 120px 0;
+  background: rgba(4, 0, 14, 0.68);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .process-steps {
@@ -1462,7 +1477,7 @@ p { margin: 0; color: var(--text-secondary); }
 
 .step-body {
   padding-left: 20px;
-  opacity: 0.8;
+  opacity: 1;
   transition: opacity var(--t-med);
 }
 
