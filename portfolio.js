@@ -312,20 +312,21 @@
       document.querySelectorAll('[data-i18n]').forEach(function (el) {
         el.textContent = t(el.dataset.i18n);
       });
-      document.querySelectorAll('[data-lang-trigger]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var next = btn.dataset.langTrigger;
-          if (!supportedLanguages.has(next) || next === currentLanguage) return;
-          currentLanguage = next;
-          applyTranslations();
-          try { window.localStorage.setItem(storageKey, currentLanguage); } catch (e) {}
-          var url = new URL(window.location.href);
-          url.searchParams.set('lang', currentLanguage);
-          window.history.replaceState({}, '', url);
-        });
-      });
       syncButtons();
     }
+
+    document.querySelectorAll('[data-lang-trigger]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var next = btn.dataset.langTrigger;
+        if (!supportedLanguages.has(next) || next === currentLanguage) return;
+        currentLanguage = next;
+        applyTranslations();
+        try { window.localStorage.setItem(storageKey, currentLanguage); } catch (e) {}
+        var url = new URL(window.location.href);
+        url.searchParams.set('lang', currentLanguage);
+        window.history.replaceState({}, '', url);
+      });
+    });
 
     applyTranslations();
   })();
