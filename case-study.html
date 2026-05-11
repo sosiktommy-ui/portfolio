@@ -247,6 +247,22 @@
     </div>
     <div class="footer-bottom"><div class="shell footer-bottom-inner"><span>2025 Vladyslav Tomashchuk</span><span class="footer-sep">-</span><span>Full-Stack Developer</span><span class="footer-sep">-</span><span>Poland</span></div></div>
   </footer>
+  <div id="lb" role="dialog" aria-modal="true" aria-label="Image viewer" hidden>
+    <div id="lb-bd"></div>
+    <button id="lb-prev" aria-label="Previous image">&#8592;</button>
+    <button id="lb-next" aria-label="Next image">&#8594;</button>
+    <button id="lb-close" aria-label="Close">&#10005;</button>
+    <figure id="lb-frame">
+      <span class="lb-c lb-c-tl"></span>
+      <span class="lb-c lb-c-tr"></span>
+      <span class="lb-c lb-c-bl"></span>
+      <span class="lb-c lb-c-br"></span>
+      <div class="lb-scan"></div>
+      <img id="lb-img" src="" alt="">
+      <figcaption id="lb-cap"></figcaption>
+    </figure>
+    <div id="lb-hud"><span id="lb-idx"></span></div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.globe.min.js"></script>
   <script src="./portfolio.js"></script>

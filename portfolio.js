@@ -155,6 +155,106 @@
   else { window.addEventListener('load', showPage, { once: true }); setTimeout(showPage, 1800); }
 
   /* ================================================================
+     LIGHTBOX — futuristic image viewer
+  ================================================================ */
+  (function () {
+    var lb      = document.getElementById('lb');
+    if (!lb) return;
+    var lbBd    = document.getElementById('lb-bd');
+    var lbFrame = document.getElementById('lb-frame');
+    var lbImg   = document.getElementById('lb-img');
+    var lbCap   = document.getElementById('lb-cap');
+    var lbIdx   = document.getElementById('lb-idx');
+    var lbClose = document.getElementById('lb-close');
+    var lbPrev  = document.getElementById('lb-prev');
+    var lbNext  = document.getElementById('lb-next');
+
+    var items = [];
+    var current = 0;
+    var isOpen = false;
+
+    function buildItems() {
+      items = [];
+      document.querySelectorAll('.gallery-img-wrap img').forEach(function (img) {
+        var cap = '';
+        var fig = img.closest('figure');
+        if (fig) { var fc = fig.querySelector('figcaption'); if (fc) cap = fc.textContent.trim(); }
+        items.push({ src: img.src, alt: img.alt || '', cap: cap });
+      });
+    }
+
+    function replayScan() {
+      var scan = lbFrame.querySelector('.lb-scan');
+      if (!scan) return;
+      scan.style.animation = 'none';
+      void scan.offsetWidth;
+      scan.style.animation = '';
+    }
+
+    function show(index) {
+      if (!items.length) buildItems();
+      current = ((index % items.length) + items.length) % items.length;
+      var item = items[current];
+      lbIdx.textContent = (current + 1) + ' / ' + items.length;
+
+      if (!isOpen) {
+        lbFrame.classList.remove('lb-in');
+        lb.removeAttribute('hidden');
+        document.body.style.overflow = 'hidden';
+        isOpen = true;
+        lbImg.src = item.src;
+        lbImg.alt = item.alt;
+        lbCap.textContent = item.cap;
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            lb.classList.add('lb-open');
+            lbFrame.classList.add('lb-in');
+          });
+        });
+      } else {
+        lbImg.style.opacity = '0';
+        setTimeout(function () {
+          lbImg.src = item.src;
+          lbImg.alt = item.alt;
+          lbCap.textContent = item.cap;
+          lbImg.style.opacity = '';
+          replayScan();
+        }, 180);
+      }
+    }
+
+    function close() {
+      lb.classList.remove('lb-open');
+      lbFrame.classList.remove('lb-in');
+      isOpen = false;
+      document.body.style.overflow = '';
+      setTimeout(function () { lb.setAttribute('hidden', ''); lbImg.src = ''; }, 440);
+    }
+
+    document.querySelectorAll('.gallery-img-wrap').forEach(function (wrap) {
+      wrap.addEventListener('click', function () {
+        if (!items.length) buildItems();
+        var src = (wrap.querySelector('img') || {}).src || '';
+        var idx = 0;
+        for (var j = 0; j < items.length; j++) { if (items[j].src === src) { idx = j; break; } }
+        show(idx);
+      });
+    });
+
+    lbClose.addEventListener('click', close);
+    lbBd.addEventListener('click', close);
+    lbPrev.addEventListener('click', function (e) { e.stopPropagation(); show(current - 1); });
+    lbNext.addEventListener('click', function (e) { e.stopPropagation(); show(current + 1); });
+
+    document.addEventListener('keydown', function (e) {
+      if (!isOpen) return;
+      if (e.key === 'Escape')      close();
+      else if (e.key === 'ArrowRight') show(current + 1);
+      else if (e.key === 'ArrowLeft')  show(current - 1);
+    });
+  })();
+
+  /* ================================================================
      i18n — LANGUAGE SWITCHER
   ================================================================ */
   (function () {
