@@ -1,591 +1,250 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" id="page-description" content="Personal portfolio for custom websites, internal tools, bots, parsers, automation, dashboards, and AI-assisted operational platforms.">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Portfolio • Complex Websites, Bots & Internal Platforms</title>
+  <meta name="description" content="Vladyslav Tomashchuk - Full-Stack Developer. Custom websites, admin platforms, bots, parsers, automation, and AI-assisted systems.">
+  <title>Vladyslav Tomashchuk - Full-Stack Developer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./portfolio.css">
 </head>
-<body data-language="en">
-  <div class="page-noise" aria-hidden="true"></div>
-  <div class="ambient ambient-a" aria-hidden="true"></div>
-  <div class="ambient ambient-b" aria-hidden="true"></div>
-  <div class="ambient ambient-c" aria-hidden="true"></div>
-  <div class="spotlight" aria-hidden="true"></div>
-  <div class="scroll-axis" aria-hidden="true"><span></span></div>
-
-  <header class="topbar">
-    <a class="brand" href="#top">
-      <span class="brand-mark">PF</span>
-      <span class="brand-copy">
-        <span class="brand-title" data-i18n="brand.title">Personal Portfolio</span>
-        <span class="brand-subtitle" data-i18n="brand.subtitle">Complex websites, bots, admin systems, automation</span>
-      </span>
+<body>
+  <div id="vanta-bg" aria-hidden="true"></div>
+  <div class="bg-gradient" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+  <div class="orb orb-4" aria-hidden="true"></div>
+  <div class="orb orb-5" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+  <div class="scroll-indicator" aria-hidden="true"><span></span></div>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="#hero">
+      <span class="brand-mark">VT</span>
+      <span class="brand-name">Vladyslav Tomashchuk</span>
     </a>
-
-    <nav class="topnav" aria-label="Portfolio sections" data-i18n-attr="aria-label:nav.aria">
-      <a href="#projects" data-i18n="nav.projects">Projects</a>
-      <a href="#systems" data-i18n="nav.systems">Systems</a>
-      <a href="#capabilities" data-i18n="nav.capabilities">Capabilities</a>
-      <a href="#stack" data-i18n="nav.stack">Stack</a>
-      <a href="#signature" data-i18n="nav.signature">Signature</a>
+    <nav class="topnav" aria-label="Portfolio sections">
+      <a href="#projects" class="nav-link">Projects</a>
+      <a href="#systems" class="nav-link">Systems</a>
+      <a href="#capabilities" class="nav-link">Skills</a>
+      <a href="#stack" class="nav-link">Stack</a>
+      <a href="#contact" class="nav-link">Contact</a>
     </nav>
-
-    <div class="topbar-tools">
-      <div class="lang-switch" role="group" aria-label="Language switch" data-i18n-attr="aria-label:lang.switchAria">
-        <button class="lang-button is-active" type="button" data-lang-trigger="en" aria-pressed="true">EN</button>
-        <button class="lang-button" type="button" data-lang-trigger="ru" aria-pressed="false">RU</button>
-      </div>
-      <a class="location-pill" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">TG: @bichuxan</a>
-      <a class="location-pill" href="tel:+48532368023" style="text-decoration:none;">+48 532 368 023</a>
-      <span class="location-pill" data-i18n="header.location">Based in Poland</span>
+    <div class="topbar-contacts">
+      <a class="pill pill-tg" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer">@bichuxan</a>
+      <a class="pill pill-phone" href="tel:+48532368023">+48 532 368 023</a>
+      <span class="pill pill-location">Poland</span>
     </div>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
   </header>
-
-  <main id="top">
-    <section class="hero shell section-anchor">
-      <div class="hero-grid">
-        <div class="hero-copy reveal" data-parallax="0.08">
-          <p class="eyebrow" data-i18n="hero.eyebrow">Independent full-stack developer</p>
-          <h1 data-i18n="hero.title">Complex digital systems, not just clean screens.</h1>
-          <p class="hero-text" data-i18n="hero.text">
-            I build custom websites, internal tools, admin platforms, parsers, bots, automation flows, and AI-assisted products where the visual layer, backend logic, integrations, and operational safety all behave like one system.
-          </p>
-          <div class="hero-actions">
-            <a class="hero-link hero-link-solid" href="#projects" data-i18n="hero.ctaPrimary">See selected builds</a>
-            <a class="hero-link hero-link-ghost" href="#capabilities" data-i18n="hero.ctaSecondary">What I can build</a>
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="#projects">Projects</a>
+    <a href="#systems">Systems</a>
+    <a href="#capabilities">Skills</a>
+    <a href="#stack">Stack</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <main>
+    <section class="hero section-anchor" id="hero">
+      <div class="hero-inner shell">
+        <div class="hero-text-block">
+          <p class="eyebrow reveal" data-delay="0"><span class="eyebrow-dot"></span>Independent Full-Stack Developer</p>
+          <h1 class="hero-heading reveal" data-delay="120">
+            <span class="h1-line">Vladyslav</span>
+            <span class="h1-line h1-glow">Tomashchuk</span>
+          </h1>
+          <p class="hero-sub reveal" data-delay="240">I build custom websites, internal tools, admin platforms, parsers, bots, automation flows, and AI-assisted products - where design, backend logic, integrations, and operational safety behave like one system.</p>
+          <div class="hero-cta reveal" data-delay="360">
+            <a class="btn-primary" href="#projects"><span>See selected builds</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a class="btn-outline" href="#contact">Get in touch</a>
           </div>
-          <div class="hero-chips">
-            <span data-i18n="hero.chip1">Custom websites</span>
-            <span data-i18n="hero.chip2">Internal tools</span>
-            <span data-i18n="hero.chip3">Parsers</span>
-            <span data-i18n="hero.chip4">Bots</span>
-            <span data-i18n="hero.chip5">AI responders</span>
-            <span data-i18n="hero.chip6">Admin dashboards</span>
-            <span data-i18n="hero.chip7">Automation</span>
-            <span data-i18n="hero.chip8">Operational systems</span>
-          </div>
-          <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
-            <a class="hero-link hero-link-ghost" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer">Telegram: @bichuxan</a>
-            <a class="hero-link hero-link-ghost" href="tel:+48532368023">+48 532 368 023</a>
-          </div>
-        </div>
-
-        <aside class="hero-rail reveal" data-parallax="0.12">
-          <article class="rail-card">
-            <span class="rail-label" data-i18n="rail.lanes">Build lanes</span>
-            <div class="rail-stack">
-              <span data-i18n="rail.lane1">Websites</span>
-              <span data-i18n="rail.lane2">Internal platforms</span>
-              <span data-i18n="rail.lane3">Bots & automation</span>
-            </div>
-          </article>
-          <article class="rail-card rail-card-muted">
-            <span class="rail-label" data-i18n="rail.approachLabel">Approach</span>
-            <p data-i18n="rail.approachBody">Structure first, visual tension second, operations always in mind.</p>
-          </article>
-        </aside>
-
-        <div class="hero-collage reveal" data-tilt data-parallax="0.05">
-          <figure class="hero-shot hero-shot-main">
-            <img src="./assets/screens/ticketing-dashboard.jpg?v=20260504-photos" alt="Blurred screenshot of an event ticketing dashboard" loading="eager">
-            <figcaption data-i18n="collage.caption1">Event ticketing platform</figcaption>
-          </figure>
-          <figure class="hero-shot hero-shot-light">
-            <img src="./assets/screens/task-control-dashboard.jpg?v=20260504-photos" alt="Blurred screenshot of a task control dashboard" loading="eager">
-            <figcaption data-i18n="collage.caption2">Task control platform</figcaption>
-          </figure>
-          <figure class="hero-shot hero-shot-map">
-            <img src="./assets/screens/ticketing-map.jpg?v=20260504-photos" alt="Sanitized screenshot of operational control tools from an admin dashboard" loading="eager">
-            <figcaption data-i18n="collage.caption3">Control, recovery, operations</figcaption>
-          </figure>
-          <div class="collage-badge">
-            <strong data-i18n="collage.badgeTitle">Real products</strong>
-            <span data-i18n="collage.badgeBody">sites • dashboards • bots • AI flows</span>
+          <div class="hero-tags reveal" data-delay="480">
+            <span>Custom websites</span>
+            <span>Internal tools</span>
+            <span>Parsers</span>
+            <span>Bots</span>
+            <span>AI responders</span>
+            <span>Admin dashboards</span>
+            <span>Automation</span>
+            <span>Operational systems</span>
           </div>
         </div>
-
-        <div class="hero-pulse reveal" data-parallax="0.1">
-          <article class="pulse-card">
-            <span class="pulse-label" data-i18n="pulse.surfaceLabel">Surface</span>
-            <strong data-i18n="pulse.surfaceTitle">Sites, dashboards, admin panels</strong>
-            <p data-i18n="pulse.surfaceBody">Frontend systems with depth, not brochure-only pages.</p>
+        <div class="hero-stats reveal" data-delay="200">
+          <article class="stat-card stat-primary">
+            <div class="stat-number" data-count="75">0</div>
+            <div class="stat-label">Club locations powered</div>
           </article>
-          <article class="pulse-card">
-            <span class="pulse-label" data-i18n="pulse.logicLabel">Logic</span>
-            <strong data-i18n="pulse.logicTitle">Automation, sync, permissions, AI</strong>
-            <p data-i18n="pulse.logicBody">Products shaped by real workflow, integrations, and data paths.</p>
+          <article class="stat-card">
+            <div class="stat-number" data-count="22">0</div>
+            <div class="stat-label">Countries covered</div>
           </article>
-          <article class="pulse-card">
-            <span class="pulse-label" data-i18n="pulse.mindsetLabel">Mindset</span>
-            <strong data-i18n="pulse.mindsetTitle">Production-safe changes</strong>
-            <p data-i18n="pulse.mindsetBody">Recovery, supportability, and operational continuity matter.</p>
+          <article class="stat-card">
+            <div class="stat-number stat-text">3+</div>
+            <div class="stat-label">Live products shipped</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-number stat-text">E2E</div>
+            <div class="stat-label">End-to-end full-stack</div>
+          </article>
+          <article class="stat-card stat-wide">
+            <div class="stat-tagline">From database to interface -</div>
+            <div class="stat-tagline-accent">turnkey.</div>
           </article>
         </div>
       </div>
-
-      <div class="marquee-band reveal">
-        <div class="marquee-track">
-          <span data-i18n="marquee.item1">Custom websites</span>
-          <span data-i18n="marquee.item2">Operational dashboards</span>
-          <span data-i18n="marquee.item3">Telegram bots</span>
-          <span data-i18n="marquee.item4">Voice AI responders</span>
-          <span data-i18n="marquee.item5">Website parsers</span>
-          <span data-i18n="marquee.item6">Workflow automation</span>
-          <span data-i18n="marquee.item7">Admin systems</span>
-          <span data-i18n="marquee.item8">Analytics interfaces</span>
-          <span data-i18n="marquee.item1">Custom websites</span>
-          <span data-i18n="marquee.item2">Operational dashboards</span>
-          <span data-i18n="marquee.item3">Telegram bots</span>
-          <span data-i18n="marquee.item4">Voice AI responders</span>
-          <span data-i18n="marquee.item5">Website parsers</span>
-          <span data-i18n="marquee.item6">Workflow automation</span>
-          <span data-i18n="marquee.item7">Admin systems</span>
-          <span data-i18n="marquee.item8">Analytics interfaces</span>
-        </div>
+      <div class="hero-scroll reveal" data-delay="600"><span>Scroll to explore</span><div class="scroll-arrow-anim"><span></span><span></span><span></span></div></div>
+    </section>
+    <div class="marquee-band" aria-hidden="true">
+      <div class="marquee-fade marquee-fade-l"></div>
+      <div class="marquee-fade marquee-fade-r"></div>
+      <div class="marquee-track">
+        <span>Custom websites</span><span class="marquee-sep">+</span><span>Operational dashboards</span><span class="marquee-sep">+</span><span>Telegram bots</span><span class="marquee-sep">+</span><span>Voice AI responders</span><span class="marquee-sep">+</span><span>Website parsers</span><span class="marquee-sep">+</span><span>Workflow automation</span><span class="marquee-sep">+</span><span>Admin systems</span><span class="marquee-sep">+</span><span>Analytics interfaces</span><span class="marquee-sep">+</span><span>Custom websites</span><span class="marquee-sep">+</span><span>Operational dashboards</span><span class="marquee-sep">+</span><span>Telegram bots</span><span class="marquee-sep">+</span><span>Voice AI responders</span><span class="marquee-sep">+</span><span>Website parsers</span><span class="marquee-sep">+</span><span>Workflow automation</span><span class="marquee-sep">+</span><span>Admin systems</span><span class="marquee-sep">+</span><span>Analytics interfaces</span><span class="marquee-sep">+</span>
+      </div>
+    </div>
+    <section class="systems-section shell section-anchor" id="systems">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="eyebrow-dot"></span>System range</p>
+        <h2>From visible frontend polish to the <span class="text-glow">invisible logic</span> underneath.</h2>
+        <p class="section-sub">Five system types I build - from polished marketing surfaces to full operational stacks.</p>
+      </div>
+      <div class="sys-grid">
+        <article class="sys-card sys-wide reveal" data-delay="0"><div class="sys-card-inner"><span class="sys-num">01</span><h3>Business websites with depth</h3><p>Premium visual layer paired with real logic: forms, structured flows, admin surfaces, integrations, and operational content.</p><div class="sys-tags"><span>Marketing surfaces</span><span>Motion systems</span><span>Product framing</span></div></div><div class="sys-glow"></div></article>
+        <article class="sys-card reveal" data-delay="80"><div class="sys-card-inner"><span class="sys-num">02</span><h3>Internal operating layers</h3><p>Permissions, filters, analytics, archive views, task flows, role-based control for real teams.</p></div><div class="sys-glow"></div></article>
+        <article class="sys-card reveal" data-delay="160"><div class="sys-card-inner"><span class="sys-num">03</span><h3>Parsers and data intake</h3><p>Scraping, cached layers, imports, scheduled sync, and source-to-dashboard data flows.</p></div><div class="sys-glow"></div></article>
+        <article class="sys-card reveal" data-delay="240"><div class="sys-card-inner"><span class="sys-num">04</span><h3>Bots and automation</h3><p>Telegram bots, notification systems, workflow triggers, auto-confirmations, and operational messaging.</p></div><div class="sys-glow"></div></article>
+        <article class="sys-card sys-accent reveal" data-delay="320"><div class="sys-card-inner"><span class="sys-num">05</span><h3>AI responder flows</h3><p>Voice-first or assistant-like experiences connected to real data, business rules, and fallback handling.</p></div><div class="sys-glow sys-glow-accent"></div></article>
       </div>
     </section>
-
-    <section class="system-map shell section-anchor" id="systems">
-      <div class="section-heading reveal">
-        <p class="eyebrow" data-i18n="systems.eyebrow">System range</p>
-        <h2 data-i18n="systems.title">From visible frontend polish to the invisible logic that keeps products usable every day.</h2>
-      </div>
-
-      <div class="system-grid">
-        <article class="system-card system-card-wide span-7 row-3 reveal">
-          <span class="system-number">01</span>
-          <h3 data-i18n="systems.card1.title">Business websites with depth</h3>
-          <p data-i18n="systems.card1.body">I can build the visible product layer and make it feel premium, but I usually pair it with real logic: forms, structured flows, admin surfaces, integrations, and operational content.</p>
-          <div class="inline-tags">
-            <span data-i18n="systems.card1.tag1">Marketing surfaces</span>
-            <span data-i18n="systems.card1.tag2">Motion systems</span>
-            <span data-i18n="systems.card1.tag3">Product framing</span>
-          </div>
-        </article>
-
-        <article class="system-card span-5 row-3 reveal">
-          <span class="system-number">02</span>
-          <h3 data-i18n="systems.card2.title">Internal operating layers</h3>
-          <p data-i18n="systems.card2.body">Permissions, filters, analytics, archive views, task flows, role-based control, and day-to-day interfaces for real teams.</p>
-        </article>
-
-        <article class="system-card span-4 row-3 reveal">
-          <span class="system-number">03</span>
-          <h3 data-i18n="systems.card3.title">Parsers & intake</h3>
-          <p data-i18n="systems.card3.body">Scraping, cached information layers, imports, scheduled sync, and source-to-dashboard data flows.</p>
-        </article>
-
-        <article class="system-card span-4 row-3 reveal">
-          <span class="system-number">04</span>
-          <h3 data-i18n="systems.card4.title">Bots & automation</h3>
-          <p data-i18n="systems.card4.body">Telegram bots, notification systems, workflow triggers, auto-confirmations, and operational messaging.</p>
-        </article>
-
-        <article class="system-card system-card-accent span-4 row-3 reveal">
-          <span class="system-number">05</span>
-          <h3 data-i18n="systems.card5.title">AI responder flows</h3>
-          <p data-i18n="systems.card5.body">Voice-first or assistant-like experiences connected to real data, business rules, and fallback handling.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="project-section project-section-dark section-anchor" id="projects">
-      <div class="shell project-shell">
+    <section class="project-section project-dark section-anchor" id="projects">
+      <div class="shell project-layout">
         <div class="project-copy reveal">
-          <p class="project-kicker" data-i18n="project1.kicker">Project 01</p>
-          <h2 data-i18n="project1.title">Event Ticketing & QR Access Platform</h2>
-          <p data-i18n-html="project1.body">A full-cycle system for ticket sales, QR generation, admin control, search, analytics, maps, and scanner-safe event operations. The platform was configured for <strong>75 club locations in 22 countries</strong> and designed to keep ticket issuance, search, filtering, reporting, and access control inside one connected product.</p>
-          <ul class="project-facts">
-            <li data-i18n="project1.fact1">Ticket issuance, search, reporting, analytics, and access control live in one product surface.</li>
-            <li data-i18n="project1.fact2">Operational thinking matters here because scanner-side reliability cannot be broken by backoffice changes.</li>
-            <li data-i18n="project1.fact3">Recovery and corrective tooling were part of the real production work, not just the interface layer.</li>
-          </ul>
-          <div class="project-tags">
-            <span data-i18n="project1.tag1">QR tickets</span>
-            <span data-i18n="project1.tag2">Search & order review</span>
-            <span data-i18n="project1.tag3">Analytics</span>
-            <span data-i18n="project1.tag4">Map views</span>
-            <span data-i18n="project1.tag5">Promo flows</span>
-            <span data-i18n="project1.tag6">Production recovery</span>
-          </div>
+          <p class="project-kicker"><span class="kicker-line"></span>Project 01</p>
+          <h2>Event Ticketing and QR Access Platform</h2>
+          <p class="project-desc">A full-cycle system for ticket sales, QR generation, admin control, search, analytics, maps, and scanner-safe event operations. Configured for <strong>75 club locations in 22 countries</strong>.</p>
+          <ul class="project-facts"><li>Ticket issuance, search, reporting, analytics, and access control in one product surface.</li><li>Scanner-side reliability cannot be broken by backoffice changes.</li><li>Recovery and corrective tooling were part of the real production work.</li></ul>
+          <div class="project-tags"><span>QR tickets</span><span>Search and order review</span><span>Analytics</span><span>Map views</span><span>Promo flows</span><span>Production recovery</span></div>
         </div>
-
-        <div class="project-board reveal">
-          <div class="project-strip">
-            <article class="micro-panel">
-              <span data-i18n="project1.metric1.label">Scale</span>
-              <strong data-i18n="project1.metric1.value">75 club locations</strong>
-            </article>
-            <article class="micro-panel">
-              <span data-i18n="project1.metric2.label">Coverage</span>
-              <strong data-i18n="project1.metric2.value">22 countries</strong>
-            </article>
-            <article class="micro-panel">
-              <span data-i18n="project1.metric3.label">Core focus</span>
-              <strong data-i18n="project1.metric3.value">Sales, access, analytics</strong>
-            </article>
-          </div>
-
-          <div class="project-gallery gallery-dark">
-            <figure class="gallery-card span-12 row-7">
-              <img src="./assets/screens/ticketing-dashboard.jpg?v=20260504-photos" alt="Blurred screenshot of the main event ticketing dashboard" loading="lazy">
-              <figcaption data-i18n="project1.caption1">Main dashboard and event overview</figcaption>
-            </figure>
-            <figure class="gallery-card span-5 row-5">
-              <img src="./assets/screens/ticketing-search.jpg?v=20260504-photos" alt="Blurred screenshot of ticket search and ticket table" loading="lazy">
-              <figcaption data-i18n="project1.caption2">Search, filtering, and ticket review</figcaption>
-            </figure>
-            <figure class="gallery-card span-7 row-5">
-              <img src="./assets/screens/ticketing-analytics-overview.jpg?v=20260504-photos" alt="Blurred screenshot of analytics overview" loading="lazy">
-              <figcaption data-i18n="project1.caption3">Revenue and ticket analytics</figcaption>
-            </figure>
-            <figure class="gallery-card span-4 row-4">
-              <img src="./assets/screens/ticketing-charts.jpg?v=20260504-photos" alt="Blurred screenshot of charts view" loading="lazy">
-              <figcaption data-i18n="project1.caption4">Charts and conversion tracking</figcaption>
-            </figure>
-            <figure class="gallery-card span-4 row-4">
-              <img src="./assets/screens/ticketing-segmentation.jpg?v=20260504-photos" alt="Sanitized screenshot of group comparison analytics" loading="lazy">
-              <figcaption data-i18n="project1.caption5">Group comparison and segmentation</figcaption>
-            </figure>
-            <figure class="gallery-card span-4 row-4">
-              <img src="./assets/screens/ticketing-map.jpg?v=20260504-photos" alt="Sanitized screenshot of operational control and recovery tools" loading="lazy">
-              <figcaption data-i18n="project1.caption6">Operational control and recovery</figcaption>
-            </figure>
-            <figure class="gallery-card span-12 row-5">
-              <img src="./assets/screens/scanner.jpg?v=20260505-scanner" alt="Screenshot of the scanner interface for live QR admission" loading="lazy">
-              <figcaption data-i18n="project1.caption7">Scanner surface and live entry state</figcaption>
-            </figure>
+        <div class="project-visual reveal" data-delay="120">
+          <div class="project-metrics"><div class="metric-chip"><span class="metric-label">Scale</span><strong>75 club locations</strong></div><div class="metric-chip"><span class="metric-label">Coverage</span><strong>22 countries</strong></div><div class="metric-chip"><span class="metric-label">Core focus</span><strong>Sales, access, analytics</strong></div></div>
+          <div class="gallery-grid">
+            <figure class="gallery-item gi-wide"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-dashboard.jpg?v=20260504-photos" alt="Event ticketing dashboard" loading="lazy"></div><figcaption>Main dashboard and event overview</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-search.jpg?v=20260504-photos" alt="Ticket search" loading="lazy"></div><figcaption>Search, filtering, and ticket review</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-analytics-overview.jpg?v=20260504-photos" alt="Analytics overview" loading="lazy"></div><figcaption>Revenue and ticket analytics</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-charts.jpg?v=20260504-photos" alt="Charts" loading="lazy"></div><figcaption>Charts and conversion tracking</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-segmentation.jpg?v=20260504-photos" alt="Segmentation" loading="lazy"></div><figcaption>Group comparison and segmentation</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/ticketing-map.jpg?v=20260504-photos" alt="Map controls" loading="lazy"></div><figcaption>Operational control and recovery</figcaption></figure>
+            <figure class="gallery-item gi-wide"><div class="gallery-img-wrap"><img src="./assets/screens/scanner.jpg?v=20260505-scanner" alt="Scanner surface" loading="lazy"></div><figcaption>Scanner surface and live entry state</figcaption></figure>
           </div>
         </div>
       </div>
     </section>
-
-    <section class="project-section project-section-light">
-      <div class="shell project-shell project-shell-reverse">
+    <section class="project-section project-mid">
+      <div class="shell project-layout project-layout-rev">
         <div class="project-copy reveal">
-          <p class="project-kicker" data-i18n="project2.kicker">Project 02</p>
-          <h2 data-i18n="project2.title">Task Control & Team Operations Platform</h2>
-          <p data-i18n="project2.body">A role-based product for coordinating recurring events, teams, permissions, task groups, confirmations, analytics, archives, and operational communication. This system connected task execution with Google Sheets sync, Telegram notifications, admin controls, and event-level workflows instead of leaving teams inside scattered chats and spreadsheets.</p>
-          <ul class="project-facts">
-            <li data-i18n="project2.fact1">Designed around repeated operational use, not one-off admin tasks.</li>
-            <li data-i18n="project2.fact2">Connected structured task execution with notifications, sync flows, user roles, and event visibility.</li>
-            <li data-i18n="project2.fact3">Turned fragmented team coordination into one controlled product environment.</li>
-          </ul>
-          <div class="project-tags project-tags-light">
-            <span data-i18n="project2.tag1">Task orchestration</span>
-            <span data-i18n="project2.tag2">Event planning</span>
-            <span data-i18n="project2.tag3">Role-based access</span>
-            <span data-i18n="project2.tag4">Telegram notifications</span>
-            <span data-i18n="project2.tag5">Analytics</span>
-            <span data-i18n="project2.tag6">Archive control</span>
-          </div>
+          <p class="project-kicker"><span class="kicker-line kicker-cyan"></span>Project 02</p>
+          <h2>Task Control and Team Operations Platform</h2>
+          <p class="project-desc">A role-based product for coordinating recurring events, teams, permissions, task groups, confirmations, analytics, archives, and operational communication.</p>
+          <ul class="project-facts"><li>Designed around repeated operational use, not one-off admin tasks.</li><li>Connected task execution with notifications, sync flows, user roles, and event visibility.</li><li>Turned fragmented team coordination into one controlled product environment.</li></ul>
+          <div class="project-tags project-tags-cyan"><span>Task orchestration</span><span>Event planning</span><span>Role-based access</span><span>Telegram notifications</span><span>Analytics</span><span>Archive control</span></div>
         </div>
-
-        <div class="project-board reveal">
-          <div class="project-strip">
-            <article class="micro-panel light-panel">
-              <span data-i18n="project2.metric1.label">Core</span>
-              <strong data-i18n="project2.metric1.value">Team operations</strong>
-            </article>
-            <article class="micro-panel light-panel">
-              <span data-i18n="project2.metric2.label">Model</span>
-              <strong data-i18n="project2.metric2.value">Roles, events, tasks</strong>
-            </article>
-            <article class="micro-panel light-panel">
-              <span data-i18n="project2.metric3.label">Support</span>
-              <strong data-i18n="project2.metric3.value">Sync, archive, notifications</strong>
-            </article>
-          </div>
-
-          <div class="project-gallery gallery-light">
-            <figure class="gallery-card light-card span-12 row-7">
-              <img src="./assets/screens/task-control-dashboard.jpg?v=20260504-photos" alt="Blurred screenshot of a team operations dashboard" loading="lazy">
-              <figcaption data-i18n="project2.caption1">Operational dashboard and team status</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-7 row-5">
-              <img src="./assets/screens/task-control-events-board.jpg?v=20260504-photos" alt="Blurred screenshot of an events board" loading="lazy">
-              <figcaption data-i18n="project2.caption2">Event board with structured task flow</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-5 row-5">
-              <img src="./assets/screens/task-control-tasks.jpg?v=20260504-photos" alt="Blurred screenshot of a task management view" loading="lazy">
-              <figcaption data-i18n="project2.caption3">Task execution and status control</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-6 row-4">
-              <img src="./assets/screens/task-control-events-list.jpg?v=20260504-photos" alt="Blurred screenshot of event management list" loading="lazy">
-              <figcaption data-i18n="project2.caption4">Event management and recurring schedules</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-6 row-4">
-              <img src="./assets/screens/task-control-users.jpg?v=20260504-photos" alt="Blurred screenshot of users and permissions management" loading="lazy">
-              <figcaption data-i18n="project2.caption5">Users, roles, and access management</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-6 row-4">
-              <img src="./assets/screens/task-control-bot-settings.jpg?v=20260504-photos" alt="Blurred screenshot of bot settings" loading="lazy">
-              <figcaption data-i18n="project2.caption6">Notification settings and integrations</figcaption>
-            </figure>
-            <figure class="gallery-card light-card span-6 row-4">
-              <img src="./assets/screens/task-control-archive.jpg?v=20260504-photos" alt="Sanitized screenshot of operator profile controls" loading="lazy">
-              <figcaption data-i18n="project2.caption7">Profile and operator account controls</figcaption>
-            </figure>
+        <div class="project-visual reveal" data-delay="120">
+          <div class="project-metrics"><div class="metric-chip metric-chip-cyan"><span class="metric-label">Core</span><strong>Team operations</strong></div><div class="metric-chip metric-chip-cyan"><span class="metric-label">Model</span><strong>Roles, events, tasks</strong></div><div class="metric-chip metric-chip-cyan"><span class="metric-label">Support</span><strong>Sync, archive, notifications</strong></div></div>
+          <div class="gallery-grid">
+            <figure class="gallery-item gi-wide"><div class="gallery-img-wrap"><img src="./assets/screens/task-control-dashboard.jpg?v=20260504-photos" alt="Task control dashboard" loading="lazy"></div><figcaption>Operational dashboard and team status</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/task-control-events-board.jpg?v=20260504-photos" alt="Events board" loading="lazy"></div><figcaption>Event board with structured task flow</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/task-control-tasks.jpg?v=20260504-photos" alt="Tasks" loading="lazy"></div><figcaption>Task execution and status control</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/task-control-events-list.jpg?v=20260504-photos" alt="Events list" loading="lazy"></div><figcaption>Event management and recurring schedules</figcaption></figure>
+            <figure class="gallery-item"><div class="gallery-img-wrap"><img src="./assets/screens/task-control-users.jpg?v=20260504-photos" alt="Users" loading="lazy"></div><figcaption>Users, roles, and access management</figcaption></figure>
           </div>
         </div>
       </div>
     </section>
-
-    <section class="project-section project-section-ink">
-      <div class="shell project-shell">
+    <section class="project-section project-dark">
+      <div class="shell project-layout">
         <div class="project-copy reveal">
-          <p class="project-kicker" data-i18n="project3.kicker">Project 03</p>
-          <h2 data-i18n="project3.title">AI Voice Auto-Responder & Booking Assistant</h2>
-          <p data-i18n-html="project3.body">A voice-first AI assistant for inbound calls, booking requests, and operational answers. I worked on a system built around <strong>Twilio voice webhooks, Groq/OpenAI-compatible AI flows, speech handling, reservation capture, SMS confirmations, and SQLite logging</strong>, with support tooling for monitoring, health checks, and safe fallback behavior.</p>
-          <ul class="project-facts">
-            <li data-i18n="project3.fact1">Handles inbound calls as a product flow, not just a single endpoint.</li>
-            <li data-i18n="project3.fact2">Uses a parser and cached information layer so answers can be grounded in current venue data.</li>
-            <li data-i18n="project3.fact3">Combines voice automation, business rules, local persistence, and operator-minded fallbacks.</li>
-          </ul>
-          <div class="project-tags">
-            <span data-i18n="project3.tag1">AI voice flows</span>
-            <span data-i18n="project3.tag2">Twilio webhooks</span>
-            <span data-i18n="project3.tag3">Site parsing</span>
-            <span data-i18n="project3.tag4">Booking automation</span>
-            <span data-i18n="project3.tag5">SQLite logs</span>
-            <span data-i18n="project3.tag6">SMS confirmation</span>
-          </div>
+          <p class="project-kicker"><span class="kicker-line kicker-magenta"></span>Project 03</p>
+          <h2>AI Voice Auto-Responder and Booking Assistant</h2>
+          <p class="project-desc">A voice-first AI assistant for inbound calls, booking requests, and operational answers. Built around <strong>Twilio webhooks, Groq/OpenAI flows, speech handling, and SQLite logging</strong>.</p>
+          <ul class="project-facts"><li>Handles inbound calls as a product flow, not just a single endpoint.</li><li>Uses a parser and cached layer so answers are grounded in current venue data.</li><li>Combines voice automation, business rules, and operator-minded fallbacks.</li></ul>
+          <div class="project-tags project-tags-magenta"><span>AI voice flows</span><span>Twilio webhooks</span><span>Site parsing</span><span>Booking automation</span><span>SQLite logs</span><span>SMS confirmation</span></div>
         </div>
-
-        <div class="signal-board reveal" data-tilt>
-          <article class="signal-core span-7 row-5">
-            <p class="eyebrow" data-i18n="project3.core.eyebrow">Voice orchestration</p>
-            <h3 data-i18n="project3.core.title">Inbound call -> recognition -> intent -> reservation capture -> confirmation -> logs.</h3>
-            <p data-i18n="project3.core.body">The interesting part here is not only the AI layer. It is the orchestration between phone entrypoints, dialogue state, live business information, booking capture, health checks, and safe fallback behavior.</p>
-          </article>
-          <article class="detail-card span-5 row-2">
-            <h3 data-i18n="project3.detail1.title">Voice automation</h3>
-            <p data-i18n="project3.detail1.body">Webhook-based call intake, structured dialogue handling, short AI answers, and operator-ready routing.</p>
-          </article>
-          <article class="detail-card span-5 row-3">
-            <h3 data-i18n="project3.detail2.title">Live information layer</h3>
-            <p data-i18n="project3.detail2.body">Website parsing with cache so the assistant can answer using current events, address, timings, prices, and venue context.</p>
-          </article>
-          <article class="detail-card span-6 row-3">
-            <h3 data-i18n="project3.detail3.title">Business logic</h3>
-            <p data-i18n="project3.detail3.body">Reservation capture for date, time, guest count, caller number, and booking history with local persistence.</p>
-          </article>
-          <article class="detail-card span-6 row-3">
-            <h3 data-i18n="project3.detail4.title">Operational reliability</h3>
-            <p data-i18n="project3.detail4.body">Health endpoints, logs, tunnel-ready setup, and safe fallback responses for real call traffic.</p>
-          </article>
+        <div class="ai-board reveal" data-delay="120">
+          <article class="ai-core"><p class="eyebrow eyebrow-sm"><span class="eyebrow-dot eyebrow-dot-magenta"></span>Voice orchestration</p><h3>Inbound call - recognition - intent - reservation - confirmation - logs.</h3><p>The interesting part is not only the AI layer. It is the orchestration between phone entrypoints, dialogue state, live business info, booking capture, health checks, and fallback behavior.</p></article>
+          <div class="ai-details">
+            <article class="ai-detail reveal" data-delay="0"><div class="ai-detail-num">01</div><h4>Voice automation</h4><p>Webhook-based call intake, structured dialogue, short AI answers, and operator-ready routing.</p></article>
+            <article class="ai-detail reveal" data-delay="80"><div class="ai-detail-num">02</div><h4>Live information layer</h4><p>Website parsing with cache so the assistant answers using current events, address, timings, prices.</p></article>
+            <article class="ai-detail reveal" data-delay="160"><div class="ai-detail-num">03</div><h4>Business logic</h4><p>Reservation capture for date, time, guest count, caller number, and booking history.</p></article>
+            <article class="ai-detail reveal" data-delay="240"><div class="ai-detail-num">04</div><h4>Operational reliability</h4><p>Health endpoints, logs, tunnel-ready setup, and safe fallback responses for real call traffic.</p></article>
+          </div>
         </div>
       </div>
     </section>
-
-    <section class="capabilities shell section-anchor" id="capabilities">
-      <div class="section-heading reveal">
-        <p class="eyebrow" data-i18n="capabilities.eyebrow">Capabilities</p>
-        <h2 data-i18n="capabilities.title">I can shape both the polished surface and the messy system underneath it.</h2>
+    <section class="capabilities-section shell section-anchor" id="capabilities">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="eyebrow-dot"></span>Capabilities</p>
+        <h2>I can shape both the <span class="text-glow">polished surface</span> and the messy system underneath.</h2>
       </div>
-
-      <div class="capability-mosaic">
-        <article class="capability-card capability-card-feature span-6 row-3 reveal">
-          <h3 data-i18n="capabilities.card1.title">Complex portfolio-grade websites</h3>
-          <p data-i18n="capabilities.card1.body">High-end layouts, layered composition, custom motion, strong visual hierarchy, and design that looks intentionally built rather than templated.</p>
-        </article>
-        <article class="capability-card span-3 row-3 reveal">
-          <h3 data-i18n="capabilities.card2.title">Admin platforms</h3>
-          <p data-i18n="capabilities.card2.body">Backoffice systems with filters, tables, analytics, permissions, settings, and operational controls.</p>
-        </article>
-        <article class="capability-card span-3 row-3 reveal">
-          <h3 data-i18n="capabilities.card3.title">Workflow products</h3>
-          <p data-i18n="capabilities.card3.body">Task coordination, confirmation flows, archives, and products structured around actual execution logic.</p>
-        </article>
-        <article class="capability-card span-4 row-3 reveal">
-          <h3 data-i18n="capabilities.card4.title">Parsers & data intake</h3>
-          <p data-i18n="capabilities.card4.body">Website parsing, cached source data, import pipelines, and scheduled sync around external systems.</p>
-        </article>
-        <article class="capability-card capability-card-dark span-4 row-3 reveal">
-          <h3 data-i18n="capabilities.card5.title">Bots & AI assistants</h3>
-          <p data-i18n="capabilities.card5.body">Telegram bots, voice bots, responder flows, and assistant-style systems connected to real business logic.</p>
-        </article>
-        <article class="capability-card span-4 row-3 reveal">
-          <h3 data-i18n="capabilities.card6.title">Automation & integrations</h3>
-          <p data-i18n="capabilities.card6.body">Google Sheets sync, exports, notifications, scheduled jobs, and process automation between tools.</p>
-        </article>
+      <div class="cap-grid">
+        <article class="cap-card cap-featured reveal" data-delay="0"><h3>Complex portfolio-grade websites</h3><p>High-end layouts, layered composition, custom motion, strong visual hierarchy - designed, not templated.</p><div class="cap-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></div></article>
+        <article class="cap-card reveal" data-delay="80"><h3>Admin platforms</h3><p>Backoffice systems with filters, tables, analytics, permissions, settings, and operational controls.</p></article>
+        <article class="cap-card reveal" data-delay="160"><h3>Workflow products</h3><p>Task coordination, confirmation flows, archives, and products structured around actual execution logic.</p></article>
+        <article class="cap-card reveal" data-delay="240"><h3>Parsers and data intake</h3><p>Website parsing, cached source data, import pipelines, and scheduled sync around external systems.</p></article>
+        <article class="cap-card cap-dark reveal" data-delay="320"><h3>Bots and AI assistants</h3><p>Telegram bots, voice bots, responder flows, and assistant-style systems connected to real business logic.</p></article>
+        <article class="cap-card reveal" data-delay="400"><h3>Automation and integrations</h3><p>Google Sheets sync, exports, notifications, scheduled jobs, and process automation between tools.</p></article>
       </div>
     </section>
-
-    <section class="stack shell section-anchor" id="stack">
-      <div class="section-heading reveal">
-        <p class="eyebrow" data-i18n="stack.eyebrow">Stack</p>
-        <h2 data-i18n="stack.title">Technologies I use across sites, products, automations, and AI-connected systems.</h2>
+    <section class="stack-section shell section-anchor" id="stack">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="eyebrow-dot"></span>Tech stack</p>
+        <h2>Technologies across sites, products, automations, and <span class="text-glow">AI systems</span>.</h2>
       </div>
-
-      <div class="stack-matrix">
-        <article class="stack-panel reveal">
-          <p class="stack-label" data-i18n="stack.frontend.label">Frontend</p>
-          <h3 data-i18n="stack.frontend.title">Web & interface layers</h3>
-          <div class="stack-cloud">
-            <span data-i18n="stack.frontend.item1">React</span>
-            <span data-i18n="stack.frontend.item2">TypeScript</span>
-            <span data-i18n="stack.frontend.item3">Vite</span>
-            <span data-i18n="stack.frontend.item4">Custom HTML/CSS/JS</span>
-            <span data-i18n="stack.frontend.item5">Admin dashboards</span>
-          </div>
-        </article>
-
-        <article class="stack-panel reveal">
-          <p class="stack-label" data-i18n="stack.backend.label">Backend</p>
-          <h3 data-i18n="stack.backend.title">Product logic & APIs</h3>
-          <div class="stack-cloud">
-            <span data-i18n="stack.backend.item1">Python</span>
-            <span data-i18n="stack.backend.item2">FastAPI</span>
-            <span data-i18n="stack.backend.item3">Flask</span>
-            <span data-i18n="stack.backend.item4">NestJS</span>
-            <span data-i18n="stack.backend.item5">Prisma</span>
-          </div>
-        </article>
-
-        <article class="stack-panel reveal">
-          <p class="stack-label" data-i18n="stack.data.label">Data & automation</p>
-          <h3 data-i18n="stack.data.title">Sync, storage, parsing</h3>
-          <div class="stack-cloud">
-            <span data-i18n="stack.data.item1">PostgreSQL</span>
-            <span data-i18n="stack.data.item2">SQLite</span>
-            <span data-i18n="stack.data.item3">Google Sheets integrations</span>
-            <span data-i18n="stack.data.item4">Web scraping</span>
-            <span data-i18n="stack.data.item5">Workflow automation</span>
-          </div>
-        </article>
-
-        <article class="stack-panel reveal">
-          <p class="stack-label" data-i18n="stack.ai.label">Bots & AI</p>
-          <h3 data-i18n="stack.ai.title">Assistants and response layers</h3>
-          <div class="stack-cloud">
-            <span data-i18n="stack.ai.item1">Telegram bots</span>
-            <span data-i18n="stack.ai.item2">Twilio</span>
-            <span data-i18n="stack.ai.item3">Groq / OpenAI</span>
-            <span data-i18n="stack.ai.item4">Voice bots</span>
-            <span data-i18n="stack.ai.item5">Notification systems</span>
-          </div>
-        </article>
+      <div class="stack-grid">
+        <article class="stack-panel reveal" data-delay="0"><div class="stack-panel-top"><p class="stack-label">Frontend</p></div><h3>Web and interface layers</h3><div class="stack-tags"><span>React</span><span>TypeScript</span><span>Vite</span><span>Custom HTML/CSS/JS</span><span>Admin dashboards</span></div><div class="stack-bar"><span style="width:92%"></span></div></article>
+        <article class="stack-panel reveal" data-delay="100"><div class="stack-panel-top"><p class="stack-label">Backend</p></div><h3>Product logic and APIs</h3><div class="stack-tags"><span>Python</span><span>FastAPI</span><span>Flask</span><span>NestJS</span><span>Prisma</span></div><div class="stack-bar"><span style="width:88%"></span></div></article>
+        <article class="stack-panel reveal" data-delay="200"><div class="stack-panel-top"><p class="stack-label">Data and automation</p></div><h3>Sync, storage, parsing</h3><div class="stack-tags"><span>PostgreSQL</span><span>SQLite</span><span>Google Sheets</span><span>Web scraping</span><span>Workflow automation</span></div><div class="stack-bar"><span style="width:85%"></span></div></article>
+        <article class="stack-panel reveal" data-delay="300"><div class="stack-panel-top"><p class="stack-label">Bots and AI</p></div><h3>Assistants and response layers</h3><div class="stack-tags"><span>Telegram bots</span><span>Twilio</span><span>Groq / OpenAI</span><span>Voice bots</span><span>Notification systems</span></div><div class="stack-bar"><span style="width:80%"></span></div></article>
       </div>
     </section>
-
-    <section class="signature-lab shell section-anchor" id="signature">
-      <div class="signature-heading reveal">
-        <div>
-          <p class="eyebrow" data-i18n="signature.eyebrow">Signature layer</p>
-          <h2 data-i18n="signature.title">Execution atlas.</h2>
-        </div>
-        <p class="signature-intro" data-i18n="signature.intro">This closing block turns the portfolio into a small control room: orbiting layers, delivery routes, and a visual reminder that design, backend logic, and operational safety have to move together.</p>
+    <section class="process-section shell">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="eyebrow-dot"></span>How I work</p>
+        <h2>Five phases from <span class="text-glow">discovery to launch</span>.</h2>
       </div>
-
-      <div class="signature-stage reveal" data-tilt>
-        <div class="signature-core">
-          <div class="signature-orbit" aria-hidden="true">
-            <span class="signature-ring signature-ring-a"></span>
-            <span class="signature-ring signature-ring-b"></span>
-            <span class="signature-ring signature-ring-c"></span>
-
-            <span class="signature-node signature-node-a" data-atlas-node="1"><span data-i18n="signature.node1">Discovery</span></span>
-            <span class="signature-node signature-node-b" data-atlas-node="2"><span data-i18n="signature.node2">Architecture</span></span>
-            <span class="signature-node signature-node-c" data-atlas-node="3"><span data-i18n="signature.node3">Interface</span></span>
-            <span class="signature-node signature-node-d" data-atlas-node="4"><span data-i18n="signature.node4">Automation</span></span>
-            <span class="signature-node signature-node-e" data-atlas-node="5"><span data-i18n="signature.node5">Launch</span></span>
-          </div>
-
-          <article class="signature-core-card">
-            <p class="stack-label" data-i18n="signature.core.label">Execution core</p>
-            <div class="signature-core-matrix">
-              <span data-i18n="signature.core.item1">Design systems</span>
-              <span data-i18n="signature.core.item2">Backend logic</span>
-              <span data-i18n="signature.core.item3">Automation flows</span>
-              <span data-i18n="signature.core.item4">Operator-safe UX</span>
-            </div>
-          </article>
-        </div>
-
-        <div class="signature-route">
-          <article class="signature-step is-active" data-atlas-step="1" tabindex="0">
-            <span class="signature-step-index">01</span>
-            <p class="card-tag" data-i18n="signature.step1.tag">Discovery</p>
-            <h3 data-i18n="signature.step1.title">Pressure map</h3>
-            <p data-i18n="signature.step1.body">Where can the workflow break, what has to stay editable, who owns which action, and what absolutely cannot fail.</p>
-          </article>
-          <article class="signature-step" data-atlas-step="2" tabindex="0">
-            <span class="signature-step-index">02</span>
-            <p class="card-tag" data-i18n="signature.step2.tag">Architecture</p>
-            <h3 data-i18n="signature.step2.title">Structure</h3>
-            <p data-i18n="signature.step2.body">I decide how screens, logic, permissions, logs, and recovery paths connect so the product can survive real use.</p>
-          </article>
-          <article class="signature-step" data-atlas-step="3" tabindex="0">
-            <span class="signature-step-index">03</span>
-            <p class="card-tag" data-i18n="signature.step3.tag">Interface</p>
-            <h3 data-i18n="signature.step3.title">Surface</h3>
-            <p data-i18n="signature.step3.body">Typography, rhythm, motion, density, and contrast are tuned so the page feels authored instead of assembled.</p>
-          </article>
-          <article class="signature-step" data-atlas-step="4" tabindex="0">
-            <span class="signature-step-index">04</span>
-            <p class="card-tag" data-i18n="signature.step4.tag">Automation</p>
-            <h3 data-i18n="signature.step4.title">Automation</h3>
-            <p data-i18n="signature.step4.body">Bots, parsers, sheets, AI, and admin actions should reinforce the same workflow instead of creating side channels.</p>
-          </article>
-          <article class="signature-step" data-atlas-step="5" tabindex="0">
-            <span class="signature-step-index">05</span>
-            <p class="card-tag" data-i18n="signature.step5.tag">Launch</p>
-            <h3 data-i18n="signature.step5.title">Release</h3>
-            <p data-i18n="signature.step5.body">Supportability, rollback paths, clear admin states, and practical maintenance are part of the design, not a separate phase.</p>
-          </article>
-        </div>
-      </div>
-
-      <div class="signature-panels">
-        <article class="signature-panel reveal">
-          <p class="card-tag" data-i18n="signature.panel1.tag">Interface tension</p>
-          <h3 data-i18n="signature.panel1.title">Rhythm</h3>
-          <p data-i18n="signature.panel1.body">That is how a portfolio stops looking like a template and starts feeling designed around a point of view.</p>
-        </article>
-        <article class="signature-panel signature-panel-dark reveal">
-          <p class="card-tag" data-i18n="signature.panel2.tag">System integrity</p>
-          <h3 data-i18n="signature.panel2.title">Integrity</h3>
-          <p data-i18n="signature.panel2.body">If the surface feels exact, the underlying orchestration, schemas, and delivery logic have to be exact too.</p>
-        </article>
-        <article class="signature-panel reveal">
-          <p class="card-tag" data-i18n="signature.panel3.tag">Operator safety</p>
-          <h3 data-i18n="signature.panel3.title">Resilience</h3>
-          <p data-i18n="signature.panel3.body">That is why I care about fallback paths, auditability, and tools that remain understandable when pressure is high.</p>
-        </article>
+      <div class="process-steps">
+        <article class="process-step reveal" data-delay="0"><div class="step-number">01</div><div class="step-line"></div><div class="step-body"><p class="step-tag">Discovery</p><h3>Pressure map</h3><p>Where the workflow can break, what must stay editable, who owns which action, what absolutely cannot fail.</p></div></article>
+        <article class="process-step reveal" data-delay="80"><div class="step-number">02</div><div class="step-line"></div><div class="step-body"><p class="step-tag">Architecture</p><h3>Structure</h3><p>How screens, logic, permissions, logs, and recovery paths connect so the product survives real use.</p></div></article>
+        <article class="process-step reveal" data-delay="160"><div class="step-number">03</div><div class="step-line"></div><div class="step-body"><p class="step-tag">Interface</p><h3>Surface</h3><p>Typography, rhythm, motion, density, and contrast tuned so the page feels authored, not assembled.</p></div></article>
+        <article class="process-step reveal" data-delay="240"><div class="step-number">04</div><div class="step-line"></div><div class="step-body"><p class="step-tag">Automation</p><h3>Integration</h3><p>Bots, parsers, sheets, AI, and admin actions that reinforce the same workflow instead of creating side channels.</p></div></article>
+        <article class="process-step reveal" data-delay="320"><div class="step-number">05</div><div class="step-line step-line-last"></div><div class="step-body"><p class="step-tag">Launch</p><h3>Release</h3><p>Supportability, rollback paths, clear admin states, and practical maintenance are part of the design.</p></div></article>
       </div>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="shell footer-panel reveal">
-      <div class="footer-copy">
-        <p class="eyebrow" data-i18n="footer.eyebrow">Selected focus</p>
-        <h2 data-i18n="footer.title">Complex portfolios should look like the work behind them.</h2>
-        <p data-i18n="footer.body">I take on custom builds that mix strong visual surfaces, product thinking, backend logic, integrations, automation, and the practical realities of day-to-day operations.</p>
+  <footer class="site-footer section-anchor" id="contact">
+    <div class="footer-glow" aria-hidden="true"></div>
+    <div class="shell footer-inner">
+      <div class="footer-headline reveal">
+        <p class="eyebrow"><span class="eyebrow-dot"></span>Let us work together</p>
+        <h2>Ready to build <span class="text-glow">something real?</span></h2>
+        <p class="footer-sub">I take on custom builds that mix strong visual surfaces, product thinking, backend logic, integrations, automation, and operational safety. Based in Poland, working remotely.</p>
       </div>
-
-      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <a href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;background:rgba(120,214,196,0.12);border:1px solid rgba(120,214,196,0.25);color:#78d6c4;font-size:0.92rem;font-weight:600;text-decoration:none;">Telegram: @bichuxan</a>
-        <a href="tel:+48532368023" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:0.92rem;font-weight:600;text-decoration:none;">+48 532 368 023</a>
+      <div class="footer-contacts reveal" data-delay="120">
+        <div class="contact-card contact-card-name"><div><span class="contact-label">Developer</span><strong class="contact-value">Vladyslav Tomashchuk</strong></div></div>
+        <a class="contact-card contact-card-tg contact-link" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer"><div><span class="contact-label">Telegram</span><strong class="contact-value">@bichuxan</strong></div><div class="contact-arrow">up-right</div></a>
+        <a class="contact-card contact-card-phone contact-link" href="tel:+48532368023"><div><span class="contact-label">Phone / WhatsApp</span><strong class="contact-value">+48 532 368 023</strong></div><div class="contact-arrow">up-right</div></a>
+        <div class="contact-card contact-card-loc"><div><span class="contact-label">Location</span><strong class="contact-value">Based in Poland, Remote</strong></div></div>
       </div>
-      <div class="footer-cta">
-        <span data-i18n="footer.chip1">Websites</span>
-        <span data-i18n="footer.chip2">Dashboards</span>
-        <span data-i18n="footer.chip3">Parsers</span>
-        <span data-i18n="footer.chip4">Bots</span>
-        <span data-i18n="footer.chip5">AI responders</span>
-        <span data-i18n="footer.chip6">Operational systems</span>
-      </div>
+      <div class="footer-chips reveal" data-delay="240"><span>Websites</span><span>Dashboards</span><span>Parsers</span><span>Bots</span><span>AI responders</span><span>Operational systems</span></div>
     </div>
+    <div class="footer-bottom"><div class="shell footer-bottom-inner"><span>2025 Vladyslav Tomashchuk</span><span class="footer-sep">-</span><span>Full-Stack Developer</span><span class="footer-sep">-</span><span>Poland</span></div></div>
   </footer>
-
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.globe.min.js"></script>
   <script src="./portfolio.js"></script>
 </body>
 </html>
