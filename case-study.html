@@ -24,7 +24,12 @@
   <div class="scroll-indicator" aria-hidden="true"><span></span></div>
   <header class="topbar" id="topbar">
     <a class="brand" href="#hero">
-      <span class="brand-mark">VT</span>
+      <span class="brand-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </span>
       <span class="brand-name">Portfolio</span>
     </a>
     <nav class="topnav" aria-label="Portfolio sections">
@@ -35,9 +40,18 @@
       <a href="#contact" class="nav-link">Contact</a>
     </nav>
     <div class="topbar-contacts">
-      <a class="pill pill-tg" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer">@bichuxan</a>
-      <a class="pill pill-phone" href="tel:+48532368023">+48 532 368 023</a>
-      <span class="pill pill-location">Poland</span>
+      <a class="pill pill-tg" href="https://t.me/bichuxan" target="_blank" rel="noopener noreferrer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        @bichuxan
+      </a>
+      <a class="pill pill-phone" href="tel:+48532368023">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.22 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        +48 532 368 023
+      </a>
+      <span class="pill pill-location">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        Poland
+      </span>
     </div>
     <div class="lang-switch" role="group" aria-label="Language switch">
       <button class="lang-button is-active" type="button" data-lang-trigger="en" aria-pressed="true">EN</button>
@@ -58,15 +72,15 @@
     <section class="hero section-anchor" id="hero">
       <div class="hero-inner shell">
         <div class="hero-text-block">
-          <p class="eyebrow reveal" data-delay="0"><span class="eyebrow-dot"></span>Independent Full-Stack Developer</p>
+          <p class="eyebrow reveal" data-delay="0"><span class="eyebrow-dot"></span><span data-i18n="hero.eyebrow">Independent Full-Stack Developer</span></p>
           <h1 class="hero-heading reveal" data-delay="120">
             <span class="h1-line">Vladyslav</span>
             <span class="h1-line h1-glow">Tomashchuk</span>
           </h1>
           <p class="hero-sub reveal" data-delay="240">I build custom websites, internal tools, admin platforms, parsers, bots, automation flows, and AI-assisted products - where design, backend logic, integrations, and operational safety behave like one system.</p>
           <div class="hero-cta reveal" data-delay="360">
-            <a class="btn-primary" href="#projects"><span>See selected builds</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-            <a class="btn-outline" href="#contact">Get in touch</a>
+            <a class="btn-primary" href="#projects"><span data-i18n="hero.ctaPrimary">See selected builds</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a class="btn-outline" href="#contact" data-i18n="hero.ctaSecondary">Get in touch</a>
           </div>
           <div class="hero-tags reveal" data-delay="480">
             <span>Custom websites</span>
@@ -113,7 +127,7 @@
     </div>
     <section class="systems-section shell section-anchor" id="systems">
       <div class="section-head reveal">
-        <p class="eyebrow"><span class="eyebrow-dot"></span>System range</p>
+        <p class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="systems.eyebrow">System range</span></p>
         <h2>From visible frontend polish to the <span class="text-glow">invisible logic</span> underneath.</h2>
         <p class="section-sub">Five system types I build - from polished marketing surfaces to full operational stacks.</p>
       </div>
@@ -191,7 +205,7 @@
     </section>
     <section class="capabilities-section shell section-anchor" id="capabilities">
       <div class="section-head reveal">
-        <p class="eyebrow"><span class="eyebrow-dot"></span>Capabilities</p>
+        <p class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="capabilities.eyebrow">Capabilities</span></p>
         <h2>I can shape both the <span class="text-glow">polished surface</span> and the messy system underneath.</h2>
       </div>
       <div class="cap-grid">
@@ -205,7 +219,7 @@
     </section>
     <section class="stack-section shell section-anchor" id="stack">
       <div class="section-head reveal">
-        <p class="eyebrow"><span class="eyebrow-dot"></span>Tech stack</p>
+        <p class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="stack.eyebrow">Tech stack</span></p>
         <h2>Technologies across sites, products, automations, and <span class="text-glow">AI systems</span>.</h2>
       </div>
       <div class="stack-grid">
@@ -217,7 +231,7 @@
     </section>
     <section class="process-section shell">
       <div class="section-head reveal">
-        <p class="eyebrow"><span class="eyebrow-dot"></span>How I work</p>
+        <p class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="process.eyebrow">How I work</span></p>
         <h2>Five phases from <span class="text-glow">discovery to launch</span>.</h2>
       </div>
       <div class="process-steps">

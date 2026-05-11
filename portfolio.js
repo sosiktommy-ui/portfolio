@@ -260,21 +260,23 @@
   (function () {
     var translations = {
       en: {
-        'hero.eyebrow': 'Independent full-stack developer',
+        'hero.eyebrow': 'Independent Full-Stack Developer',
         'hero.ctaPrimary': 'See selected builds',
         'hero.ctaSecondary': 'Get in touch',
         'systems.eyebrow': 'System range',
         'capabilities.eyebrow': 'Capabilities',
-        'stack.eyebrow': 'Stack',
+        'stack.eyebrow': 'Tech stack',
+        'process.eyebrow': 'How I work',
         'lang.switchAria': 'Language switch'
       },
       ru: {
-        'hero.eyebrow': 'Независимый full-stack разработчик',
+        'hero.eyebrow': 'Независимый Full-Stack разработчик',
         'hero.ctaPrimary': 'Посмотреть проекты',
         'hero.ctaSecondary': 'Связаться',
-        'systems.eyebrow': 'Диапазон систем',
+        'systems.eyebrow': 'Типы систем',
         'capabilities.eyebrow': 'Возможности',
-        'stack.eyebrow': 'Стек',
+        'stack.eyebrow': 'Технологии',
+        'process.eyebrow': 'Как я работаю',
         'lang.switchAria': 'Переключение языка'
       }
     };
