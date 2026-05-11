@@ -101,8 +101,8 @@
       setTimeout(function () { el.classList.add('is-visible'); }, d);
       revObs.unobserve(el);
     });
-  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(function (el) { revObs.observe(el); });
+  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-scale').forEach(function (el) { revObs.observe(el); });
 
   /* ================================================================
      COUNTERS
