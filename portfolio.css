@@ -509,6 +509,20 @@ p { margin: 0; color: var(--text-secondary); }
 }
 .pill-phone:hover svg { opacity: 1; }
 
+.pill-dmitry {
+  border-color: rgba(236,72,153,0.26);
+  background: rgba(236,72,153,0.06);
+  color: #f5b3d3;
+}
+.pill-dmitry svg { color: #f5b3d3; opacity: 0.9; }
+.pill-dmitry:hover {
+  border-color: rgba(244,114,182,0.58);
+  color: #fff;
+  background: rgba(236,72,153,0.14);
+  box-shadow: 0 0 16px rgba(236,72,153,0.22);
+}
+.pill-dmitry:hover svg { opacity: 1; }
+
 .pill-location {
   border-color: rgba(167,139,250,0.14);
   background: rgba(124,58,237,0.04);

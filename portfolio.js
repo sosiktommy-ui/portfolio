@@ -291,8 +291,12 @@
         'about.card1.p': '21 years old, born in 2004, originally from Ukraine, working in IT for a long time already. I care about clean structure, practical decisions, and making things feel finished instead of generic.',
         'about.card2.h3': 'What I bring',
         'about.card2.p': 'Ideas, product thinking, careful implementation, consulting around direction, and a habit of pushing projects past the obvious version into something that feels stronger and more polished.',
-        'about.card3.h3': 'Support and ideas',
-        'about.card3.p': 'Dmitry Ganj helped with ideas and consultation along the way. You can find him here: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
+        'about.card3.h3': 'Project manager & founder',
+        'about.card3.p': 'Dmitry Ganj helped with direction, framing, and consultation along the way. You can find him here: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
+        'top.dmitry': 'Project manager & Founder · Dmitry Ganj',
+        'projects.creditEyebrow': 'Project support',
+        'projects.creditTitle': 'Project manager & founder: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'projects.creditDesc': 'He helped with direction, project framing, and product consultation across the work.',
         'proj.01.h2': 'Event Ticketing and QR Access Platform',
         'proj.01.desc': 'A full-cycle system for ticket sales, QR generation, admin control, search, analytics, maps, and scanner-safe event operations. Configured for <strong>75 club locations in 22 countries</strong>.',
         'proj.01.f1': 'Ticket issuance, search, reporting, analytics, and access control in one product surface.',
@@ -353,7 +357,7 @@
         'footer.h2': 'Ready to build <span class="text-glow">something real?</span>',
         'footer.sub': 'I take on custom builds that mix strong visual surfaces, product thinking, backend logic, integrations, automation, and operational safety. Based in Poland, working remotely.',
         'footer.creditLabel': 'Credit',
-        'footer.creditValue': 'Ideas and consultation with <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'footer.creditValue': 'Project manager & founder: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
         'lang.switchAria': 'Language switch'
       },
       ru: {
@@ -388,8 +392,12 @@
         'about.card1.p': '21 год, 2004 года рождения, родом из Украины, давно работаю в IT. Мне важны чистая структура, практичные решения и ощущение завершённости вместо шаблонности.',
         'about.card2.h3': 'Что я привношу',
         'about.card2.p': 'Идеи, продуктовое мышление, аккуратную реализацию, консультации по направлению и привычку доводить проект дальше очевидной версии — до более сильного и отполированного результата.',
-        'about.card3.h3': 'Поддержка и идеи',
-        'about.card3.p': 'Dmitry Ganj помогал с идеями и консультацией по ходу работы. Его можно найти здесь: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
+        'about.card3.h3': 'Проджект менеджер и фаундер',
+        'about.card3.p': 'Dmitry Ganj помогал с направлением, упаковкой и консультацией по ходу работы. Его можно найти здесь: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
+        'top.dmitry': 'Проджект менеджер и фаундер · Dmitry Ganj',
+        'projects.creditEyebrow': 'Поддержка проекта',
+        'projects.creditTitle': 'Проджект менеджер и фаундер: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'projects.creditDesc': 'Помогал с направлением, упаковкой проекта и консультацией по продукту на протяжении работы.',
         'proj.01.h2': 'Платформа продажи билетов и QR-доступа',
         'proj.01.desc': 'Полноцикловая система для продажи билетов, генерации QR, admin-контроля, поиска, аналитики, карт и безопасных операций на мероприятиях. Настроена для <strong>75 клубных локаций в 22 странах</strong>.',
         'proj.01.f1': 'Выдача билетов, поиск, отчётность, аналитика и контроль доступа в одном продукте.',
@@ -450,7 +458,7 @@
         'footer.h2': 'Готовы построить <span class="text-glow">что-то настоящее?</span>',
         'footer.sub': 'Берусь за кастомные проекты, которые сочетают сильные визуальные поверхности, продуктовое мышление, серверную логику, интеграции, автоматизацию и операционную надёжность. Базируюсь в Польше, работаю удалённо.',
         'footer.creditLabel': 'Кредит',
-        'footer.creditValue': 'Идеи и консультация с <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'footer.creditValue': 'Проджект менеджер и фаундер: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
         'lang.switchAria': 'Переключение языка'
       }
     };
