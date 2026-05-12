@@ -293,7 +293,7 @@
         'about.card2.p': 'Ideas, product thinking, careful implementation, consulting around direction, and a habit of pushing projects past the obvious version into something that feels stronger and more polished.',
         'about.card3.h3': 'Project manager & founder',
         'about.card3.p': 'Dmitry Ganj helped with direction, framing, and consultation along the way. You can find him here: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
-        'top.dmitry': 'Project manager & Founder · Dmitry Ganj',
+        'top.dmitry': 'Dmitry Ganj',
         'projects.creditEyebrow': 'Project support',
         'projects.creditTitle': 'Project manager & founder: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
         'projects.creditDesc': 'He helped with direction, project framing, and product consultation across the work.',
@@ -356,8 +356,8 @@
         'footer.eyebrow': 'Let us work together',
         'footer.h2': 'Ready to build <span class="text-glow">something real?</span>',
         'footer.sub': 'I take on custom builds that mix strong visual surfaces, product thinking, backend logic, integrations, automation, and operational safety. Based in Poland, working remotely.',
-        'footer.creditLabel': 'Credit',
-        'footer.creditValue': 'Project manager & founder: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'footer.dmLabel': 'Project Manager & Founder',
+        'footer.dmValue': 'Dmitry Ganj',
         'lang.switchAria': 'Language switch'
       },
       ru: {
@@ -394,7 +394,7 @@
         'about.card2.p': 'Идеи, продуктовое мышление, аккуратную реализацию, консультации по направлению и привычку доводить проект дальше очевидной версии — до более сильного и отполированного результата.',
         'about.card3.h3': 'Проджект менеджер и фаундер',
         'about.card3.p': 'Dmitry Ganj помогал с направлением, упаковкой и консультацией по ходу работы. Его можно найти здесь: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">instagram.com/dmitry_ganj</a>.',
-        'top.dmitry': 'Проджект менеджер и фаундер · Dmitry Ganj',
+        'top.dmitry': 'Dmitry Ganj',
         'projects.creditEyebrow': 'Поддержка проекта',
         'projects.creditTitle': 'Проджект менеджер и фаундер: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
         'projects.creditDesc': 'Помогал с направлением, упаковкой проекта и консультацией по продукту на протяжении работы.',
@@ -457,8 +457,8 @@
         'footer.eyebrow': 'Давайте работать вместе',
         'footer.h2': 'Готовы построить <span class="text-glow">что-то настоящее?</span>',
         'footer.sub': 'Берусь за кастомные проекты, которые сочетают сильные визуальные поверхности, продуктовое мышление, серверную логику, интеграции, автоматизацию и операционную надёжность. Базируюсь в Польше, работаю удалённо.',
-        'footer.creditLabel': 'Кредит',
-        'footer.creditValue': 'Проджект менеджер и фаундер: <a href="https://www.instagram.com/dmitry_ganj/" target="_blank" rel="noopener noreferrer">Dmitry Ganj</a>',
+        'footer.dmLabel': 'Проект-менеджер & Основатель',
+        'footer.dmValue': 'Dmitry Ganj',
         'lang.switchAria': 'Переключение языка'
       }
     };

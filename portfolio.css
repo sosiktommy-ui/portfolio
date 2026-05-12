@@ -1699,6 +1699,16 @@ p { margin: 0; color: var(--text-secondary); }
 }
 
 .contact-card-phone:hover .contact-arrow { color: var(--cyan-lt); }
+.contact-card-dm:hover .contact-arrow { color: #f06292; }
+
+.contact-card-dm {
+  border-color: rgba(225,48,108,0.22);
+}
+.contact-card-dm:hover {
+  border-color: rgba(225,48,108,0.55);
+  background: rgba(225,48,108,0.06);
+}
+.contact-card-dm .contact-value { color: #f06292; }
 
 .contact-card-name { background: rgba(124,58,237,0.04); }
 .contact-card-loc { background: rgba(124,58,237,0.04); }
