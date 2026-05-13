@@ -287,19 +287,14 @@
         // scanline pattern
         ' float scan = sin((vP.y) * 80.0 + uTime*1.5) * 0.5 + 0.5;',
         ' col += scan * 0.025;',
-        // reveal swipe (vertical wipe controlled by uReveal 0..1)
-        ' float wipe = smoothstep(uReveal - 0.08, uReveal + 0.02, vUv.y);',
-        ' float revealMask = mix(0.0, 1.0, wipe);',
-        ' // glowing leading edge of reveal',
-        ' float edgeGlow = exp(-pow((vUv.y - uReveal) * 30.0, 2.0)) * (uReveal > 0.001 && uReveal < 0.999 ? 1.0 : 0.0);',
-        ' col += uTint * edgeGlow * 1.5;',
-        ' float alpha = maskInside * uOpacity * revealMask;',
+        ' float alpha = maskInside * uOpacity;',
         ' gl_FragColor = vec4(col, alpha);',
         '}'
       ].join('\n')
     });
     var mesh = new THREE.Mesh(geo, mat);
     mesh.userData.panelMat = mat;
+    mesh.renderOrder = 10;
     return mesh;
   }
 
@@ -372,7 +367,7 @@
         ' float a = smoothstep(0.5, 0.0, d);',
         ' vec3 col = mix(uColor1, uColor2, vT);',
         ' col = mix(col*0.7, col*1.4, uEnergy);',
-        ' gl_FragColor = vec4(col, a * (0.30 + uEnergy*0.55));',
+        ' gl_FragColor = vec4(col, a * (0.06 + uEnergy*0.14));',
         '}'
       ].join('\n')
     });
@@ -380,6 +375,7 @@
     var pts = new THREE.Points(g, m);
     pts.frustumCulled = false;
     pts.userData.burstMat = m;
+    pts.renderOrder = -10;
     return pts;
   }
 
@@ -422,9 +418,9 @@
     ring2.rotation.x = Math.PI / 2.5;
     heroGroup.add(ring2);
 
-    // particle halo around hero
-    var burst = makeBurst(IS_MOBILE ? 2000 : 4000, new THREE.Vector3(0,0,0), 0xa78bfa, 0xffffff, 3.0);
-    burst.userData.burstMat.uniforms.uEnergy.value = 0.6;
+    // particle halo around hero (subtle)
+    var burst = makeBurst(IS_MOBILE ? 500 : 1200, new THREE.Vector3(0,0,-2.5), 0xa78bfa, 0xffffff, 4.0);
+    burst.userData.burstMat.uniforms.uEnergy.value = 0.5;
     heroGroup.add(burst);
 
     heroGroup.userData.ico = ico;
@@ -457,13 +453,13 @@
     var clusterX = mirror ? -3.2 : 3.2;
     group.position.x = clusterX;
 
-    // particle burst around cluster center
+    // particle burst BEHIND cluster center (small, subtle)
     var burst = makeBurst(
-      IS_MOBILE ? 2400 : 5000,
-      new THREE.Vector3(0, 0, 0),
+      IS_MOBILE ? 400 : 800,
+      new THREE.Vector3(0, 0, -3.5),
       project.tintHex,
       project.accentHex,
-      4.2
+      5.2
     );
     group.add(burst);
 
@@ -676,10 +672,8 @@
           if (!p) return;
           var mat = p.userData.panelMat;
           if (!mat) return;
-          // stagger reveal per panel
-          var localR = THREE.MathUtils.clamp((reveal - i * 0.05) / 0.7, 0, 1);
-          mat.uniforms.uReveal.value = localR;
-          mat.uniforms.uOpacity.value = THREE.MathUtils.clamp(prox * 1.4, 0, 1);
+          // simple opacity fade based on proximity (no wipe)
+          mat.uniforms.uOpacity.value = THREE.MathUtils.clamp(prox * 1.6, 0, 1);
         });
       }
       if (cl.userData.burst && cl.userData.burst.userData.burstMat) {
@@ -807,25 +801,90 @@
   });
 
   // -----------------------------------------------------------
-  // 16. Audio + mute
+  // 16. Audio — WebAudio synthesized ambient drone (no network)
   // -----------------------------------------------------------
+  var audioCtx = null;
+  var masterGain = null;
+  var audioMuted = false;
+  function buildAudio() {
+    if (audioCtx) return;
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = new Ctx();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.0001;
+      masterGain.connect(audioCtx.destination);
+
+      // soft reverb-ish lowpass tail using delay feedback
+      var lp = audioCtx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 1100;
+      lp.Q.value = 0.6;
+      lp.connect(masterGain);
+
+      // three slowly-detuned sine pads
+      var freqs = [55, 82.5, 110, 138.59, 165];
+      freqs.forEach(function (f, i) {
+        var osc = audioCtx.createOscillator();
+        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+        osc.frequency.value = f;
+        var g = audioCtx.createGain();
+        g.gain.value = 0.06 + Math.random() * 0.04;
+        // slow LFO on gain (breathing)
+        var lfo = audioCtx.createOscillator();
+        lfo.frequency.value = 0.05 + i * 0.013;
+        var lfoG = audioCtx.createGain();
+        lfoG.gain.value = 0.03;
+        lfo.connect(lfoG); lfoG.connect(g.gain);
+        // slow LFO on detune
+        var lfoD = audioCtx.createOscillator();
+        lfoD.frequency.value = 0.03 + i * 0.007;
+        var lfoDG = audioCtx.createGain();
+        lfoDG.gain.value = 3 + i;
+        lfoD.connect(lfoDG); lfoDG.connect(osc.detune);
+        osc.connect(g); g.connect(lp);
+        osc.start(); lfo.start(); lfoD.start();
+      });
+
+      // subtle filtered noise wind
+      var bufSize = 2 * audioCtx.sampleRate;
+      var noiseBuffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      var nd = noiseBuffer.getChannelData(0);
+      for (var n = 0; n < bufSize; n++) nd[n] = (Math.random() * 2 - 1) * 0.5;
+      var noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer; noise.loop = true;
+      var nFilt = audioCtx.createBiquadFilter();
+      nFilt.type = 'bandpass'; nFilt.frequency.value = 600; nFilt.Q.value = 0.7;
+      var nGain = audioCtx.createGain(); nGain.gain.value = 0.04;
+      noise.connect(nFilt); nFilt.connect(nGain); nGain.connect(lp);
+      noise.start();
+    } catch (e) { audioCtx = null; }
+  }
+  function fadeAudio(target, dur) {
+    if (!masterGain || !audioCtx) return;
+    var now = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(target, now + dur);
+  }
   function startAudio() {
-    audio.volume = 0;
-    var pl = audio.play();
-    if (pl && typeof pl.catch === 'function') {
-      pl.catch(function () { muteBtn.classList.add('is-muted'); });
-    }
-    if (window.gsap) gsap.to(audio, { volume: 0.4, duration: 2.2 });
+    buildAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    audioMuted = false;
+    muteBtn.classList.remove('is-muted');
+    fadeAudio(0.35, 2.4);
   }
   muteBtn.addEventListener('click', function () {
-    if (audio.muted || audio.paused) {
-      audio.muted = false;
-      var pl = audio.play();
-      if (pl && typeof pl.catch === 'function') pl.catch(function(){});
+    if (!audioCtx) { startAudio(); return; }
+    if (audioMuted) {
+      audioMuted = false;
       muteBtn.classList.remove('is-muted');
+      fadeAudio(0.35, 0.6);
     } else {
-      audio.muted = true;
+      audioMuted = true;
       muteBtn.classList.add('is-muted');
+      fadeAudio(0.0001, 0.5);
     }
   });
 
