@@ -854,6 +854,54 @@ p { margin: 0; color: var(--text-secondary); }
 .scroll-arrow-anim span:nth-child(3) { animation-delay: 0.4s; opacity: 0.3; }
 
 /* ── Marquee ───────────────────────────────────────────────────── */
+.team-banner {
+  border-top: 1px solid rgba(167,139,250,0.08);
+  border-bottom: 1px solid rgba(167,139,250,0.08);
+  padding: 28px 0;
+}
+.team-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.team-member {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.team-role {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.team-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-hi);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.team-x {
+  color: rgba(167,139,250,0.25);
+  font-size: 24px;
+  font-weight: 300;
+  user-select: none;
+  line-height: 1;
+}
+.team-member-dm {
+  text-decoration: none;
+  transition: opacity 0.18s;
+}
+.team-member-dm .team-name {
+  color: #f06292;
+}
+.team-member-dm svg { opacity: 0.75; transition: opacity 0.18s; }
+.team-member-dm:hover { opacity: 0.8; }
+.team-member-dm:hover svg { opacity: 1; }
+
 .marquee-band {
   position: relative;
   overflow: hidden;
