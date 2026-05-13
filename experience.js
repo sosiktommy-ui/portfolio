@@ -1,599 +1,822 @@
 /* =============================================================
-   /3D MODE — Immersive experience runtime
-   Three.js particle-hologram + HUD interactivity
+   /3D MODE — Immersive scroll experience runtime
+   Activetheory-style scroll-driven 3D stage with floating
+   project panels, particle bursts, parallax atmospherics.
+
    Stack: THREE (global, r134) + GSAP (global)
    ============================================================= */
 (function () {
   'use strict';
 
   // -----------------------------------------------------------
-  // 0. Project data
+  // 0. Project data + scene layout
   // -----------------------------------------------------------
+  // Sections in scrollable DOM:
+  //   0 → Hero (abstract orbit shapes)
+  //   1 → Ticketing      (cluster A)
+  //   2 → Task Control   (cluster B)
+  //   3 → AI Voice       (waveform cluster C)
+  //   4 → Stack          (formation: panels arrange into grid)
+  //   5 → Connect        (panels orbit around center)
+
   var PROJECTS = [
     {
-      title: 'EVENT TICKETING / QR ACCESS',
-      desc: 'Full-cycle ticketing, QR generation, admin control, analytics and scanner-safe access. Configured for 75 club locations across 22 countries.',
-      tags: ['QR tickets', 'Search', 'Analytics', 'Maps', 'Scanner'],
-      image: './assets/screens/ticketing-dashboard.jpg',
-      tint: [0.78, 0.82, 1.00]
+      key: 'ticketing',
+      sectionIdx: 1,
+      tintHex: 0x8b9eff,   // cool blue
+      accentHex: 0xa78bfa,
+      images: [
+        './assets/screens/ticketing-dashboard.jpg',
+        './assets/screens/ticketing-analytics-overview.jpg',
+        './assets/screens/ticketing-charts.jpg',
+        './assets/screens/ticketing-map.jpg',
+        './assets/screens/ticketing-search.jpg',
+        './assets/screens/scanner.jpg'
+      ]
     },
     {
-      title: 'TASK CONTROL / TEAM OPS',
-      desc: 'Role-based product for coordinating recurring events, teams, permissions, task groups, confirmations, analytics, archives and operational comms.',
-      tags: ['Roles', 'Tasks', 'Events', 'Archive', 'Sync'],
-      image: './assets/screens/task-control-dashboard.jpg',
-      tint: [0.90, 0.82, 1.00]
+      key: 'taskcontrol',
+      sectionIdx: 2,
+      tintHex: 0xb290ff,   // violet
+      accentHex: 0xc7a4ff,
+      images: [
+        './assets/screens/task-control-dashboard.jpg',
+        './assets/screens/task-control-events-board.jpg',
+        './assets/screens/task-control-tasks.jpg',
+        './assets/screens/task-control-events-list.jpg',
+        './assets/screens/task-control-users.jpg',
+        './assets/screens/task-control-archive.jpg'
+      ]
     },
     {
-      title: 'AI VOICE AUTO-RESPONDER',
-      desc: 'Inbound voice product handling calls as a flow — parser + cached layer ground every answer in current venue data with operator-aware fallbacks.',
-      tags: ['Voice', 'Parser', 'Cache', 'Rules', 'Fallback'],
-      image: null, // procedural waveform
-      tint: [0.95, 0.78, 1.00]
+      key: 'aivoice',
+      sectionIdx: 3,
+      tintHex: 0xf0abfc,   // pink-violet
+      accentHex: 0xff9ad9,
+      images: []  // procedural only — no screenshots available
     }
   ];
 
-  var PARTICLE_COUNT = 32000;
+  // distance between section "stops" in 3D world (Y axis)
+  var STOP_GAP = 18;
+  // total stops = 6 (sections)
+  var NUM_STOPS = 6;
+
   var IS_MOBILE = window.matchMedia('(max-width: 880px), (pointer: coarse)').matches;
-  if (IS_MOBILE) PARTICLE_COUNT = 16000;
   var REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // -----------------------------------------------------------
   // 1. DOM refs
   // -----------------------------------------------------------
   var canvas    = document.getElementById('xp-canvas');
-  var hud       = document.getElementById('xp-hud');
   var boot      = document.getElementById('xp-boot');
   var bootLog   = document.getElementById('xp-boot-log');
   var enterBtn  = document.getElementById('xp-enter');
-  var idxEl     = document.getElementById('xp-idx');
-  var totalEl   = document.getElementById('xp-total');
-  var titleEl   = document.getElementById('xp-title');
-  var descEl    = document.getElementById('xp-desc');
-  var tagsEl    = document.getElementById('xp-tags');
-  var centerEl  = document.getElementById('xp-center');
-  var prevBtn   = document.getElementById('xp-prev');
-  var nextBtn   = document.getElementById('xp-next');
+  var hud       = document.getElementById('xp-hud');
+  var sectionTag= document.getElementById('xp-section-tag');
   var muteBtn   = document.getElementById('xp-mute');
   var audio     = document.getElementById('xp-audio');
   var cursorEl  = document.getElementById('xp-cursor');
-
-  totalEl.textContent = String(PROJECTS.length).padStart(2, '0');
+  var scrollHint= document.getElementById('xp-scroll-hint');
+  var rail      = document.getElementById('xp-rail');
+  var railItems = rail ? rail.querySelectorAll('.xp-rail-item') : [];
+  var sections  = document.querySelectorAll('.xp-sec');
 
   // -----------------------------------------------------------
-  // 2. Boot sequence (typed log)
+  // 2. Boot log
   // -----------------------------------------------------------
   var BOOT_LINES = [
     '> INIT.RENDERER ............. <span class="ok">OK</span>',
     '> LOAD.SHADERS .............. <span class="ok">OK</span>',
-    '> SAMPLE.ASSETS [1/3] ....... <span class="ok">OK</span>',
-    '> SAMPLE.ASSETS [2/3] ....... <span class="ok">OK</span>',
-    '> SAMPLE.ASSETS [3/3] ....... <span class="ok">OK</span>',
+    '> COMPILE.MATERIALS ......... <span class="ok">OK</span>',
+    '> SAMPLE.TEXTURES [00/12] ... <span class="ok">QUEUED</span>',
     '> CALIBRATE.HUD ............. <span class="ok">OK</span>',
     '> AUDIO.STREAM .............. <span class="warn">STANDBY</span>',
+    '> AWAITING.USER ............. <span class="warn">USER_GESTURE</span>',
     '> READY'
   ];
-  var bootIdx = 0;
+  var bi = 0;
   function typeBoot() {
-    if (bootIdx >= BOOT_LINES.length) return;
-    bootLog.innerHTML += BOOT_LINES[bootIdx] + '\n';
-    bootIdx++;
-    setTimeout(typeBoot, 180 + Math.random() * 120);
+    if (bi >= BOOT_LINES.length) return;
+    bootLog.innerHTML += BOOT_LINES[bi] + '\n';
+    bi++;
+    setTimeout(typeBoot, 160 + Math.random() * 130);
   }
   typeBoot();
 
   // -----------------------------------------------------------
-  // 3. Three.js scene setup
+  // 3. Three.js core
   // -----------------------------------------------------------
   var renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: !IS_MOBILE,
-    alpha: false,
+    alpha: true,
     powerPreference: 'high-performance'
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
-  renderer.setClearColor(0x05060a, 1);
+  renderer.setClearColor(0x000000, 0);
 
   var scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x05060a, 0.085);
+  scene.fog = new THREE.FogExp2(0x06070d, 0.022);
 
-  var camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 1.2, 6.2);
-  camera.lookAt(0, 0.4, 0);
+  var camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(0, 0, 10);
+  camera.lookAt(0, 0, 0);
 
-  // ---------- Ground podium ----------
-  (function buildPodium() {
-    // big outer disc
-    var outer = new THREE.Mesh(
-      new THREE.CircleGeometry(8, 96),
-      new THREE.MeshBasicMaterial({
-        color: 0x0c0e16,
-        transparent: true,
-        opacity: 0.95
-      })
-    );
-    outer.rotation.x = -Math.PI / 2;
-    outer.position.y = -1.6;
-    scene.add(outer);
+  var sceneRefs = {};
 
-    // mid disc (the platform itself)
-    var midGeo = new THREE.CircleGeometry(2.6, 72);
-    var midMat = new THREE.MeshBasicMaterial({ color: 0x141821 });
-    var mid = new THREE.Mesh(midGeo, midMat);
-    mid.rotation.x = -Math.PI / 2;
-    mid.position.y = -1.5;
-    scene.add(mid);
+  // -----------------------------------------------------------
+  // 4. Background star particles (huge field)
+  // -----------------------------------------------------------
+  (function buildStars(){
+    var N = IS_MOBILE ? 1200 : 2600;
+    var positions = new Float32Array(N * 3);
+    var sizes     = new Float32Array(N);
+    var colors    = new Float32Array(N * 3);
+    for (var i = 0; i < N; i++) {
+      var r  = 60 + Math.random() * 60;
+      var th = Math.random() * Math.PI * 2;
+      var ph = Math.acos(Math.random() * 2 - 1);
+      positions[i*3]   = Math.sin(ph) * Math.cos(th) * r;
+      positions[i*3+1] = (Math.random() * 2 - 1) * (NUM_STOPS * STOP_GAP);
+      positions[i*3+2] = Math.sin(ph) * Math.sin(th) * r - 30;
+      sizes[i] = 0.5 + Math.random() * 1.8;
+      var t = Math.random();
+      colors[i*3]   = 0.7 + t*0.3;
+      colors[i*3+1] = 0.65 + t*0.3;
+      colors[i*3+2] = 0.95;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
+    g.setAttribute('aColor',   new THREE.BufferAttribute(colors, 3));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0,0,0), 200);
 
-    // emissive ring close
-    var ring1 = new THREE.Mesh(
-      new THREE.RingGeometry(2.55, 2.62, 96),
-      new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.55 })
-    );
-    ring1.rotation.x = -Math.PI / 2;
-    ring1.position.y = -1.49;
-    scene.add(ring1);
-
-    // ring 2
-    var ring2 = new THREE.Mesh(
-      new THREE.RingGeometry(3.4, 3.42, 128),
-      new THREE.MeshBasicMaterial({ color: 0xc7cbd6, transparent: true, opacity: 0.18 })
-    );
-    ring2.rotation.x = -Math.PI / 2;
-    ring2.position.y = -1.55;
-    scene.add(ring2);
-
-    // ring 3 (outer faint)
-    var ring3 = new THREE.Mesh(
-      new THREE.RingGeometry(5.0, 5.02, 128),
-      new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.08 })
-    );
-    ring3.rotation.x = -Math.PI / 2;
-    ring3.position.y = -1.58;
-    scene.add(ring3);
-
-    // ambient ground grid (very subtle)
-    var grid = new THREE.GridHelper(20, 40, 0x202531, 0x101319);
-    grid.material.transparent = true;
-    grid.material.opacity = 0.25;
-    grid.position.y = -1.595;
-    scene.add(grid);
-
-    // overhead halo
-    var halo = new THREE.Mesh(
-      new THREE.RingGeometry(2.4, 2.7, 96),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
-    );
-    halo.rotation.x = -Math.PI / 2;
-    halo.position.y = 3.5;
-    scene.add(halo);
-
-    // godray cone (additive)
-    var coneGeo = new THREE.ConeGeometry(2.5, 5.2, 48, 1, true);
-    var coneMat = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      uniforms: {
-        uColor: { value: new THREE.Color(0xa78bfa) }
-      },
+    var m = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uPx:{value:renderer.getPixelRatio()} },
       vertexShader: [
-        'varying float vY;',
+        'attribute float aSize;',
+        'attribute vec3 aColor;',
+        'uniform float uTime; uniform float uPx;',
+        'varying vec3 vC; varying float vT;',
         'void main(){',
-        '  vY = (position.y + 2.6) / 5.2;',
-        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);',
+        ' vC = aColor;',
+        ' vec4 mv = modelViewMatrix * vec4(position,1.0);',
+        ' gl_Position = projectionMatrix * mv;',
+        ' float tw = sin(uTime*0.8 + position.x*0.6 + position.y*0.3)*0.5+0.5;',
+        ' vT = tw;',
+        ' gl_PointSize = aSize * uPx * (260.0 / -mv.z) * (0.4 + tw*0.6);',
         '}'
       ].join('\n'),
       fragmentShader: [
-        'varying float vY;',
-        'uniform vec3 uColor;',
+        'varying vec3 vC; varying float vT;',
         'void main(){',
-        '  float a = smoothstep(0.0, 1.0, vY) * 0.18;',
-        '  a *= 1.0 - smoothstep(0.6, 1.0, vY);',
-        '  gl_FragColor = vec4(mix(vec3(1.0), uColor, 0.6), a);',
+        ' vec2 uv = gl_PointCoord - 0.5;',
+        ' float d = length(uv);',
+        ' if(d>0.5) discard;',
+        ' float a = smoothstep(0.5,0.0,d) * (0.35 + vT*0.55);',
+        ' gl_FragColor = vec4(vC, a);',
         '}'
       ].join('\n')
     });
-    var cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.y = 1.1;
-    cone.rotation.x = Math.PI; // tip down
-    scene.add(cone);
+    var pts = new THREE.Points(g, m);
+    pts.frustumCulled = false;
+    pts.userData.isStars = true;
+    pts.userData.mat = m;
+    scene.add(pts);
+    sceneRefs.stars = pts;
   })();
 
   // -----------------------------------------------------------
-  // 4. Particle hologram
+  // 5. Texture loader (with async fallback)
   // -----------------------------------------------------------
-  // Per-particle attributes:
-  //  - aPosA  (current target, animated to)
-  //  - aPosB  (next target)
-  //  - aSeed  (random vec3 for noise + explosion vector)
-  // Uniforms:
-  //  - uTime, uProgress (0..1 morph), uChaos (0..1 explode), uTint
+  var texLoader = new THREE.TextureLoader();
+  texLoader.crossOrigin = 'anonymous';
 
-  var positionsA = new Float32Array(PARTICLE_COUNT * 3);
-  var positionsB = new Float32Array(PARTICLE_COUNT * 3);
-  var seeds      = new Float32Array(PARTICLE_COUNT * 3);
-
-  for (var i = 0; i < PARTICLE_COUNT; i++) {
-    seeds[i * 3]     = (Math.random() * 2 - 1);
-    seeds[i * 3 + 1] = (Math.random() * 2 - 1);
-    seeds[i * 3 + 2] = (Math.random() * 2 - 1);
-  }
-
-  var pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('aPosA', new THREE.BufferAttribute(positionsA, 3));
-  pGeo.setAttribute('aPosB', new THREE.BufferAttribute(positionsB, 3));
-  pGeo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));
-  // Required position attribute for raycasting / frustum; reuse aPosA buffer view.
-  pGeo.setAttribute('position', new THREE.BufferAttribute(positionsA, 3));
-  pGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 10);
-
-  var pMat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    uniforms: {
-      uTime:     { value: 0 },
-      uProgress: { value: 0 },
-      uChaos:    { value: 0 },
-      uSize:     { value: IS_MOBILE ? 1.6 : 2.0 },
-      uPxRatio:  { value: renderer.getPixelRatio() },
-      uTint:     { value: new THREE.Color(0xa78bfa) },
-      uAccent:   { value: new THREE.Color(0xffffff) }
-    },
-    vertexShader: [
-      'attribute vec3 aPosA;',
-      'attribute vec3 aPosB;',
-      'attribute vec3 aSeed;',
-      'uniform float uTime;',
-      'uniform float uProgress;',
-      'uniform float uChaos;',
-      'uniform float uSize;',
-      'uniform float uPxRatio;',
-      'varying float vSeed;',
-      'varying float vChaos;',
-      'float easeInOut(float t){ return t<0.5 ? 2.0*t*t : 1.0 - pow(-2.0*t+2.0, 2.0)*0.5; }',
-      'void main(){',
-      '  float p = easeInOut(clamp(uProgress, 0.0, 1.0));',
-      '  vec3 pos = mix(aPosA, aPosB, p);',
-      '  // breathing micro-noise',
-      '  float n = sin(uTime*0.6 + aSeed.x*9.0) * 0.012 + cos(uTime*0.5 + aSeed.y*7.0) * 0.012;',
-      '  pos += aSeed * n;',
-      '  // explosion offset (peaks mid-morph)',
-      '  float chaosBell = uChaos * (1.0 - abs(p - 0.5) * 2.0);',
-      '  pos += aSeed * chaosBell * 1.4;',
-      '  // slow lift float',
-      '  pos.y += sin(uTime*0.4 + aSeed.z*3.14) * 0.02;',
-      '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-      '  gl_Position = projectionMatrix * mv;',
-      '  float dist = -mv.z;',
-      '  gl_PointSize = uSize * uPxRatio * (240.0 / dist);',
-      '  vSeed = aSeed.x * 0.5 + 0.5;',
-      '  vChaos = chaosBell;',
-      '}'
-    ].join('\n'),
-    fragmentShader: [
-      'uniform vec3 uTint;',
-      'uniform vec3 uAccent;',
-      'varying float vSeed;',
-      'varying float vChaos;',
-      'void main(){',
-      '  vec2 uv = gl_PointCoord - 0.5;',
-      '  float d = length(uv);',
-      '  if (d > 0.5) discard;',
-      '  float a = smoothstep(0.5, 0.0, d);',
-      '  vec3 col = mix(uTint, uAccent, vSeed*0.55);',
-      '  col = mix(col, vec3(1.0, 0.92, 1.0), vChaos*0.7);',
-      '  gl_FragColor = vec4(col, a * 0.9);',
-      '}'
-    ].join('\n')
-  });
-
-  var particles = new THREE.Points(pGeo, pMat);
-  particles.frustumCulled = false;
-  scene.add(particles);
-
-  // -----------------------------------------------------------
-  // 5. Shape sampling
-  // -----------------------------------------------------------
-  // Cache of sampled positions per project (Float32Array of length PARTICLE_COUNT*3)
-  var SHAPE_CACHE = [];
-
-  function sampleImageShape(url) {
+  function loadTex(url) {
     return new Promise(function (resolve) {
-      var img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function () {
-        var tw = 220;
-        var th = Math.round(tw * (img.height / img.width));
-        var c = document.createElement('canvas');
-        c.width = tw; c.height = th;
-        var ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, tw, th);
-        var data = ctx.getImageData(0, 0, tw, th).data;
-
-        // Build brightness list of bright-enough pixels
-        var bright = [];
-        for (var y = 0; y < th; y++) {
-          for (var x = 0; x < tw; x++) {
-            var idx = (y * tw + x) * 4;
-            var r = data[idx], g = data[idx+1], b = data[idx+2];
-            var br = (r * 0.3 + g * 0.59 + b * 0.11) / 255;
-            if (br > 0.18) bright.push(x, y, br);
-          }
+      texLoader.load(
+        url,
+        function (t) {
+          t.minFilter = THREE.LinearFilter;
+          t.magFilter = THREE.LinearFilter;
+          t.generateMipmaps = false;
+          t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+          if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
+          resolve(t);
+        },
+        undefined,
+        function () {
+          // graceful fallback: 1x1 gray
+          var c = document.createElement('canvas'); c.width = c.height = 4;
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#222';
+          ctx.fillRect(0,0,4,4);
+          resolve(new THREE.CanvasTexture(c));
         }
-        var poolCount = bright.length / 3;
-        var out = new Float32Array(PARTICLE_COUNT * 3);
-        // Shape mapping: width 3.4, height proportional, centered around y=0.3
-        var W = 3.4;
-        var H = W * (th / tw);
-        var yCenter = 0.4;
-
-        for (var i = 0; i < PARTICLE_COUNT; i++) {
-          // rejection sampling weighted by brightness
-          var px, py, pr;
-          var tries = 0;
-          do {
-            var k = (Math.random() * poolCount) | 0;
-            px = bright[k * 3];
-            py = bright[k * 3 + 1];
-            pr = bright[k * 3 + 2];
-            tries++;
-          } while (Math.random() > pr && tries < 6);
-
-          // normalize to [-0.5..0.5] then scale; flip Y so image is upright
-          var nx = (px / (tw - 1)) - 0.5;
-          var ny = 0.5 - (py / (th - 1));
-          // jitter inside the "pixel"
-          nx += (Math.random() - 0.5) / tw;
-          ny += (Math.random() - 0.5) / th;
-
-          var ox = nx * W;
-          var oy = yCenter + ny * H;
-          var oz = (Math.random() - 0.5) * 0.08;
-
-          out[i * 3]     = ox;
-          out[i * 3 + 1] = oy;
-          out[i * 3 + 2] = oz;
-        }
-        resolve(out);
-      };
-      img.onerror = function () {
-        resolve(buildProceduralWave());
-      };
-      img.src = url;
+      );
     });
   }
 
-  function buildProceduralWave() {
-    // cylindrical waveform — for AI Voice project
-    var out = new Float32Array(PARTICLE_COUNT * 3);
-    for (var i = 0; i < PARTICLE_COUNT; i++) {
-      var t = i / PARTICLE_COUNT;
-      var angle = t * Math.PI * 2 * 6 + Math.random() * 0.3;
-      var radius = 1.4 + Math.random() * 0.4 + Math.sin(angle * 0.5) * 0.2;
-      // double-helix-ish waveform with vertical sinusoid
-      var y = 0.35 + Math.sin(angle * 2.4 + Math.random() * 0.2) * 0.7 + (Math.random() - 0.5) * 0.15;
-      var x = Math.cos(angle) * radius;
-      var z = Math.sin(angle) * radius * 0.55;
-      // sprinkle some "echo" particles further out
-      if (Math.random() < 0.18) {
-        var er = radius + 0.4 + Math.random() * 0.6;
-        x = Math.cos(angle) * er;
-        z = Math.sin(angle) * er * 0.55;
-        y += (Math.random() - 0.5) * 0.4;
+  // -----------------------------------------------------------
+  // 6. Project panel (textured plane with rounded corners
+  //    + glow border) shader
+  // -----------------------------------------------------------
+  function makePanel(texture, w, h, tintColor) {
+    var geo = new THREE.PlaneGeometry(w, h, 1, 1);
+    var mat = new THREE.ShaderMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      uniforms: {
+        uTex:    { value: texture },
+        uTint:   { value: new THREE.Color(tintColor) },
+        uTime:   { value: 0 },
+        uOpacity:{ value: 1.0 },
+        uHover:  { value: 0 },
+        uAspect: { value: new THREE.Vector2(w, h) },
+        uRadius: { value: 0.08 },         // corner radius (in world units)
+        uReveal: { value: 0.0 }           // 0..1 reveal swipe
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'varying vec3 vP;',
+        'void main(){',
+        ' vUv = uv;',
+        ' vP = position;',
+        ' gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'precision highp float;',
+        'uniform sampler2D uTex;',
+        'uniform vec3 uTint;',
+        'uniform float uTime;',
+        'uniform float uOpacity;',
+        'uniform float uHover;',
+        'uniform vec2 uAspect;',
+        'uniform float uRadius;',
+        'uniform float uReveal;',
+        'varying vec2 vUv;',
+        'varying vec3 vP;',
+        // rounded rect mask in world units (centered at 0)
+        'float sdRoundedBox(vec2 p, vec2 b, float r){',
+        ' vec2 q = abs(p) - b + r;',
+        ' return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;',
+        '}',
+        'void main(){',
+        ' vec2 hb = uAspect * 0.5;',
+        ' float d = sdRoundedBox(vP.xy, hb, uRadius);',
+        ' float aaw = fwidth(d);',
+        ' float maskInside = 1.0 - smoothstep(0.0, aaw*1.5, d);',
+        ' if (maskInside <= 0.001) discard;',
+        // tex sample (uv y flipped because image)
+        ' vec4 t = texture2D(uTex, vec2(vUv.x, 1.0 - vUv.y));',
+        ' vec3 col = t.rgb;',
+        // mild tint multiply
+        ' col = mix(col, col * uTint, 0.20);',
+        // hover boost
+        ' col = mix(col, col * 1.15, uHover);',
+        // bevel edge: distance-from-edge glow
+        ' float edge = smoothstep(0.0, -0.08, d);',
+        ' float rim  = (1.0 - edge);',
+        ' vec3 rimCol = uTint * 1.3;',
+        ' col = mix(col, rimCol, rim * 0.55);',
+        // scanline pattern
+        ' float scan = sin((vP.y) * 80.0 + uTime*1.5) * 0.5 + 0.5;',
+        ' col += scan * 0.025;',
+        // reveal swipe (vertical wipe controlled by uReveal 0..1)
+        ' float wipe = smoothstep(uReveal - 0.08, uReveal + 0.02, vUv.y);',
+        ' float revealMask = mix(0.0, 1.0, wipe);',
+        ' // glowing leading edge of reveal',
+        ' float edgeGlow = exp(-pow((vUv.y - uReveal) * 30.0, 2.0)) * (uReveal > 0.001 && uReveal < 0.999 ? 1.0 : 0.0);',
+        ' col += uTint * edgeGlow * 1.5;',
+        ' float alpha = maskInside * uOpacity * revealMask;',
+        ' gl_FragColor = vec4(col, alpha);',
+        '}'
+      ].join('\n')
+    });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.userData.panelMat = mat;
+    return mesh;
+  }
+
+  // -----------------------------------------------------------
+  // 7. Particle burst around a center (per project cluster)
+  // -----------------------------------------------------------
+  function makeBurst(count, center, color1, color2, spread) {
+    var positions = new Float32Array(count * 3);
+    var seeds     = new Float32Array(count * 3);
+    var rndSize   = new Float32Array(count);
+    for (var i = 0; i < count; i++) {
+      // radial cluster, biased toward center
+      var r  = Math.pow(Math.random(), 0.6) * spread;
+      var th = Math.random() * Math.PI * 2;
+      var ph = Math.acos(Math.random() * 2 - 1);
+      positions[i*3]   = center.x + Math.sin(ph) * Math.cos(th) * r;
+      positions[i*3+1] = center.y + Math.sin(ph) * Math.sin(th) * r * 0.7;
+      positions[i*3+2] = center.z + Math.cos(ph) * r * 0.8;
+      seeds[i*3]   = (Math.random()*2-1);
+      seeds[i*3+1] = (Math.random()*2-1);
+      seeds[i*3+2] = (Math.random()*2-1);
+      rndSize[i] = 0.5 + Math.random() * 1.5;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('aSeed',    new THREE.BufferAttribute(seeds, 3));
+    g.setAttribute('aSize',    new THREE.BufferAttribute(rndSize, 1));
+    g.boundingSphere = new THREE.Sphere(center.clone(), spread * 2.5);
+
+    var m = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime:   { value: 0 },
+        uPx:     { value: renderer.getPixelRatio() },
+        uColor1: { value: new THREE.Color(color1) },
+        uColor2: { value: new THREE.Color(color2) },
+        uEnergy: { value: 0 }    // 0..1 — how active this cluster is (driven by scroll)
+      },
+      vertexShader: [
+        'attribute vec3 aSeed;',
+        'attribute float aSize;',
+        'uniform float uTime; uniform float uPx; uniform float uEnergy;',
+        'varying float vT; varying vec3 vS;',
+        'void main(){',
+        ' vec3 pos = position;',
+        ' // breathing motion',
+        ' pos.x += sin(uTime*0.6 + aSeed.x*9.0) * 0.18;',
+        ' pos.y += cos(uTime*0.5 + aSeed.y*7.0) * 0.20;',
+        ' pos.z += sin(uTime*0.7 + aSeed.z*5.0) * 0.18;',
+        ' // outward push driven by energy',
+        ' pos += aSeed * uEnergy * 2.0;',
+        ' vec4 mv = modelViewMatrix * vec4(pos,1.0);',
+        ' gl_Position = projectionMatrix * mv;',
+        ' vT = aSeed.x*0.5+0.5;',
+        ' vS = aSeed;',
+        ' float s = aSize * (0.6 + uEnergy*0.8);',
+        ' gl_PointSize = s * uPx * (220.0 / -mv.z);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform vec3 uColor1;',
+        'uniform vec3 uColor2;',
+        'uniform float uEnergy;',
+        'varying float vT;',
+        'varying vec3 vS;',
+        'void main(){',
+        ' vec2 uv = gl_PointCoord - 0.5;',
+        ' float d = length(uv);',
+        ' if(d>0.5) discard;',
+        ' float a = smoothstep(0.5, 0.0, d);',
+        ' vec3 col = mix(uColor1, uColor2, vT);',
+        ' col = mix(col*0.7, col*1.4, uEnergy);',
+        ' gl_FragColor = vec4(col, a * (0.30 + uEnergy*0.55));',
+        '}'
+      ].join('\n')
+    });
+
+    var pts = new THREE.Points(g, m);
+    pts.frustumCulled = false;
+    pts.userData.burstMat = m;
+    return pts;
+  }
+
+  // -----------------------------------------------------------
+  // 8. Hero abstract centerpiece
+  //    floating wireframe icosahedron + ring + particle haze
+  // -----------------------------------------------------------
+  var heroGroup;
+  (function buildHero() {
+    heroGroup = new THREE.Group();
+    heroGroup.position.set(0, 0, 0);
+
+    // wireframe icosahedron
+    var icoGeo = new THREE.IcosahedronGeometry(1.6, 1);
+    var icoMat = new THREE.MeshBasicMaterial({
+      color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.7
+    });
+    var ico = new THREE.Mesh(icoGeo, icoMat);
+    heroGroup.add(ico);
+
+    // inner solid (very faint)
+    var inner = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(1.5, 1),
+      new THREE.MeshBasicMaterial({ color: 0x1a1d2e, transparent: true, opacity: 0.35 })
+    );
+    heroGroup.add(inner);
+
+    // halo ring
+    var ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.8, 2.86, 128),
+      new THREE.MeshBasicMaterial({ color: 0xc7a4ff, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = Math.PI / 2.2;
+    heroGroup.add(ring);
+
+    var ring2 = new THREE.Mesh(
+      new THREE.RingGeometry(3.6, 3.62, 128),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+    );
+    ring2.rotation.x = Math.PI / 2.5;
+    heroGroup.add(ring2);
+
+    // particle halo around hero
+    var burst = makeBurst(IS_MOBILE ? 2000 : 4000, new THREE.Vector3(0,0,0), 0xa78bfa, 0xffffff, 3.0);
+    burst.userData.burstMat.uniforms.uEnergy.value = 0.6;
+    heroGroup.add(burst);
+
+    heroGroup.userData.ico = ico;
+    heroGroup.userData.ring = ring;
+    heroGroup.userData.ring2 = ring2;
+    heroGroup.userData.burst = burst;
+
+    scene.add(heroGroup);
+  })();
+
+  // -----------------------------------------------------------
+  // 9. Project clusters — placed at section Y positions
+  // -----------------------------------------------------------
+  // Layout strategy:
+  //   sectionIdx 1 (Ticketing):    Y = -STOP_GAP   (we move camera DOWN in -Y as we scroll)
+  //   sectionIdx 2 (Task Control): Y = -2*STOP_GAP
+  //   sectionIdx 3 (AI Voice):     Y = -3*STOP_GAP
+  //   sectionIdx 4 (Stack):        Y = -4*STOP_GAP — formation
+  //   sectionIdx 5 (Connect):      Y = -5*STOP_GAP — orbit
+
+  var clusters = [];   // each: { group, panels[], burst, sectionIdx, basis }
+
+  function buildClusterFor(project) {
+    var group = new THREE.Group();
+    group.position.y = -project.sectionIdx * STOP_GAP;
+    group.userData.project = project;
+
+    // Cluster center: on the right side for odd sections, left for even (mirror)
+    var mirror = (project.sectionIdx % 2 === 0);
+    var clusterX = mirror ? -3.2 : 3.2;
+    group.position.x = clusterX;
+
+    // particle burst around cluster center
+    var burst = makeBurst(
+      IS_MOBILE ? 2400 : 5000,
+      new THREE.Vector3(0, 0, 0),
+      project.tintHex,
+      project.accentHex,
+      4.2
+    );
+    group.add(burst);
+
+    // panels arranged in a depth-staggered fan
+    var panels = [];
+    var imgs = project.images.slice(0, 6);
+
+    var positions = [
+      // [x,    y,   z,   rotY,    rotZ,   w,   h ]
+      [ 0.0,   0.6,  0.0,   0.00,   0.00,  4.8, 3.0 ],   // hero (front)
+      [-2.8,   1.2, -2.4,  -0.30,   0.05,  3.2, 2.0 ],
+      [ 2.6,  -0.4, -2.2,   0.32,  -0.04,  3.0, 1.9 ],
+      [-2.2,  -1.6, -3.8,  -0.22,   0.03,  2.6, 1.6 ],
+      [ 2.0,   1.8, -4.2,   0.28,  -0.05,  2.4, 1.5 ],
+      [ 0.2,  -2.0, -5.2,   0.0,    0.02,  2.8, 1.75]
+    ];
+
+    // For procedural-only project (AI Voice — no images): build abstract panels with gradient texture
+    if (imgs.length === 0) {
+      var grad = makeGradientTexture(project.tintHex, project.accentHex);
+      for (var i = 0; i < positions.length; i++) {
+        var p = positions[i];
+        var panel = makePanel(grad, p[5], p[6], project.tintHex);
+        panel.position.set(p[0], p[1], p[2]);
+        panel.rotation.y = p[3];
+        panel.rotation.z = p[4];
+        panel.userData.basePos = panel.position.clone();
+        panel.userData.baseRot = { x: 0, y: p[3], z: p[4] };
+        panel.userData.floatPhase = Math.random() * Math.PI * 2;
+        group.add(panel);
+        panels.push(panel);
+
+        // add waveform decoration on top of panel
+        addWaveformLines(panel, project.tintHex);
       }
-      out[i * 3]     = x;
-      out[i * 3 + 1] = y;
-      out[i * 3 + 2] = z;
+      group.userData.panels = panels;
+      group.userData.burst = burst;
+      scene.add(group);
+      clusters.push(group);
+      return Promise.resolve();
     }
-    return out;
-  }
 
-  function buildCloud() {
-    // initial "fog" cloud — starting shape
-    var out = new Float32Array(PARTICLE_COUNT * 3);
-    for (var i = 0; i < PARTICLE_COUNT; i++) {
-      var r = Math.pow(Math.random(), 0.4) * 1.6;
-      var theta = Math.random() * Math.PI * 2;
-      var phi = Math.acos(Math.random() * 2 - 1);
-      out[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-      out[i * 3 + 1] = 0.4 + r * Math.cos(phi) * 0.7;
-      out[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta) * 0.6;
-    }
-    return out;
-  }
-
-  function loadAllShapes() {
-    var tasks = PROJECTS.map(function (p) {
-      if (p.image) return sampleImageShape(p.image);
-      return Promise.resolve(buildProceduralWave());
-    });
-    return Promise.all(tasks).then(function (arr) {
-      SHAPE_CACHE = arr;
-    });
-  }
-
-  // -----------------------------------------------------------
-  // 6. Morph / project switching
-  // -----------------------------------------------------------
-  var currentIdx = 0;
-  var isMorphing = false;
-
-  function setBufferFromShape(attrName, shape) {
-    var attr = pGeo.getAttribute(attrName);
-    attr.array.set(shape);
-    attr.needsUpdate = true;
-  }
-
-  function applyHUD(i) {
-    var p = PROJECTS[i];
-    idxEl.textContent = String(i + 1).padStart(2, '0');
-    titleEl.textContent = p.title;
-    descEl.textContent = p.desc;
-    tagsEl.innerHTML = p.tags.map(function (t) { return '<span>' + t + '</span>'; }).join('');
-    // update tint
-    pMat.uniforms.uTint.value.setRGB(p.tint[0], p.tint[1], p.tint[2]);
-  }
-
-  function goTo(nextIdx, direction) {
-    if (isMorphing) return;
-    nextIdx = ((nextIdx % PROJECTS.length) + PROJECTS.length) % PROJECTS.length;
-    if (nextIdx === currentIdx) return;
-    isMorphing = true;
-
-    // Write next target into aPosB
-    setBufferFromShape('aPosB', SHAPE_CACHE[nextIdx]);
-    pMat.uniforms.uProgress.value = 0;
-
-    // HUD micro-glitch
-    centerEl.classList.add('is-morphing');
-
-    var dur = REDUCED_MOTION ? 0.6 : 1.4;
-    if (window.gsap) {
-      gsap.to(pMat.uniforms.uChaos, { value: 1.0, duration: dur * 0.45, ease: 'power2.in' });
-      gsap.to(pMat.uniforms.uProgress, {
-        value: 1, duration: dur, ease: 'power2.inOut',
-        onComplete: function () {
-          // After morph completes, swap: B becomes A, progress reset
-          setBufferFromShape('aPosA', SHAPE_CACHE[nextIdx]);
-          pMat.uniforms.uProgress.value = 0;
-          currentIdx = nextIdx;
-          isMorphing = false;
-          centerEl.classList.remove('is-morphing');
-        }
+    var promises = imgs.map(function (src, idx) {
+      return loadTex(src).then(function (tex) {
+        var p = positions[idx];
+        var panel = makePanel(tex, p[5], p[6], project.tintHex);
+        panel.position.set(p[0], p[1], p[2]);
+        panel.rotation.y = p[3];
+        panel.rotation.z = p[4];
+        panel.userData.basePos = panel.position.clone();
+        panel.userData.baseRot = { x: 0, y: p[3], z: p[4] };
+        panel.userData.floatPhase = Math.random() * Math.PI * 2;
+        group.add(panel);
+        panels[idx] = panel;
       });
-      gsap.to(pMat.uniforms.uChaos, { value: 0.0, duration: dur * 0.55, delay: dur * 0.45, ease: 'power2.out' });
-      // Apply HUD halfway through
-      gsap.delayedCall(dur * 0.45, function () { applyHUD(nextIdx); });
-    } else {
-      setBufferFromShape('aPosA', SHAPE_CACHE[nextIdx]);
-      currentIdx = nextIdx;
-      isMorphing = false;
-      centerEl.classList.remove('is-morphing');
-      applyHUD(nextIdx);
+    });
+
+    return Promise.all(promises).then(function () {
+      group.userData.panels = panels;
+      group.userData.burst = burst;
+      scene.add(group);
+      clusters.push(group);
+    });
+  }
+
+  function makeGradientTexture(c1, c2) {
+    var c = document.createElement('canvas'); c.width = 512; c.height = 320;
+    var ctx = c.getContext('2d');
+    var g = ctx.createLinearGradient(0, 0, 512, 320);
+    var hex = function (h) { return '#' + ('000000' + h.toString(16)).slice(-6); };
+    g.addColorStop(0, hex(c1));
+    g.addColorStop(0.5, '#1a1d2e');
+    g.addColorStop(1, hex(c2));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 320);
+    // overlay grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    for (var x = 0; x < 512; x += 32) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,320); ctx.stroke(); }
+    for (var y = 0; y < 320; y += 32) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(512,y); ctx.stroke(); }
+    // big "AI VOICE" text
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 40px "Space Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('AI · VOICE', 256, 160);
+    ctx.font = '14px "Space Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('[ ACTIVE_LISTENER_v3 ]', 256, 192);
+
+    // waveform
+    ctx.strokeStyle = hex(c2);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var xx = 0; xx <= 512; xx += 4) {
+      var amp = Math.sin(xx * 0.04) * 16 + Math.sin(xx * 0.11) * 8;
+      var py = 240 + amp;
+      if (xx === 0) ctx.moveTo(xx, py); else ctx.lineTo(xx, py);
+    }
+    ctx.stroke();
+
+    var t = new THREE.CanvasTexture(c);
+    t.minFilter = THREE.LinearFilter;
+    return t;
+  }
+
+  function addWaveformLines(panel, color) {
+    // a simple animated bar overlay; purely decorative
+    var pos = panel.position;
+    var w = panel.userData.panelMat.uniforms.uAspect.value.x;
+    var bars = new THREE.Group();
+    for (var i = 0; i < 12; i++) {
+      var bar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.5, 0.02),
+        new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.65 })
+      );
+      bar.position.x = (i - 5.5) * (w * 0.06);
+      bar.position.y = -w * 0.18;
+      bar.position.z = 0.04;
+      bar.userData.phase = i;
+      bars.add(bar);
+    }
+    bars.position.copy(pos);
+    bars.rotation.copy(panel.rotation);
+    panel.userData.bars = bars;
+    panel.parent && panel.parent.add(bars);
+  }
+
+  // -----------------------------------------------------------
+  // 10. Build all clusters (async)
+  // -----------------------------------------------------------
+  var clustersReady = Promise.all(PROJECTS.map(buildClusterFor));
+
+  // -----------------------------------------------------------
+  // 11. Camera scroll system
+  // -----------------------------------------------------------
+  var scrollProgress = 0;   // 0..NUM_STOPS-1 (continuous)
+  var targetCamY = 0;
+  var camY = 0;
+  var camX = 0;
+  var targetCamX = 0;
+  var camZ = 10;
+  var targetCamZ = 10;
+
+  function computeScrollProgress() {
+    // scroll progress: total scroll = (NUM_STOPS - 1) * vh
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    var s = max > 0 ? (window.scrollY / max) : 0;
+    s = Math.max(0, Math.min(1, s));
+    return s * (NUM_STOPS - 1);
+  }
+
+  function updateScrollState() {
+    scrollProgress = computeScrollProgress();
+    // section index nearest
+    var idx = Math.round(scrollProgress);
+
+    // camera y: linear with scroll
+    targetCamY = -scrollProgress * STOP_GAP;
+
+    // camera x sway: mirror clusters get +X view (camera shifts opposite)
+    var floorIdx = Math.floor(scrollProgress);
+    var frac = scrollProgress - floorIdx;
+
+    // base x per section
+    var XS = [0, -1.4, 1.4, -1.4, 0, 0];   // mirror of cluster x (cluster x = ±3.2, push camera slightly toward them)
+    var xa = XS[floorIdx] || 0;
+    var xb = XS[Math.min(floorIdx + 1, NUM_STOPS - 1)] || 0;
+    targetCamX = xa + (xb - xa) * frac;
+
+    // camera Z: orbit a bit closer in connect/stack
+    var ZS = [11, 10, 10, 10, 14, 11];
+    var za = ZS[floorIdx] || 10;
+    var zb = ZS[Math.min(floorIdx + 1, NUM_STOPS - 1)] || 10;
+    targetCamZ = za + (zb - za) * frac;
+
+    // update HUD tag
+    var labels = ['CHAPTER 00 / INTRO', 'CHAPTER 01 / TICKETING', 'CHAPTER 02 / TASK CONTROL', 'CHAPTER 03 / AI VOICE', 'CHAPTER 04 / SYSTEM RANGE', 'CHAPTER 05 / CONNECT'];
+    if (sectionTag) sectionTag.textContent = labels[idx] || labels[0];
+
+    // rail active
+    for (var i = 0; i < railItems.length; i++) {
+      railItems[i].classList.toggle('is-active', i === idx);
+    }
+
+    // section reveal (each section observes its own viewport intersection)
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+      var r = sec.getBoundingClientRect();
+      var midDist = Math.abs((r.top + r.height/2) - window.innerHeight/2);
+      if (midDist < window.innerHeight * 0.55) sec.classList.add('is-in');
+    }
+
+    // scroll hint fade
+    if (scrollHint) {
+      if (window.scrollY > 80) scrollHint.classList.add('is-hidden');
+      else scrollHint.classList.remove('is-hidden');
+    }
+
+    // panel reveal: drive each panel's uReveal uniform from local proximity
+    clusters.forEach(function (cl) {
+      var d = Math.abs((cl.userData.project.sectionIdx) - scrollProgress);
+      // proximity 0 (right on cluster) → 1.0 reveal, 1+ → 0 reveal
+      var prox = Math.max(0, 1 - d);
+      var reveal = THREE.MathUtils.smoothstep(prox, 0.05, 0.6);
+      // also energy for burst
+      var energy = THREE.MathUtils.smoothstep(prox, 0.0, 0.8);
+      if (cl.userData.panels) {
+        cl.userData.panels.forEach(function (p, i) {
+          if (!p) return;
+          var mat = p.userData.panelMat;
+          if (!mat) return;
+          // stagger reveal per panel
+          var localR = THREE.MathUtils.clamp((reveal - i * 0.05) / 0.7, 0, 1);
+          mat.uniforms.uReveal.value = localR;
+          mat.uniforms.uOpacity.value = THREE.MathUtils.clamp(prox * 1.4, 0, 1);
+        });
+      }
+      if (cl.userData.burst && cl.userData.burst.userData.burstMat) {
+        cl.userData.burst.userData.burstMat.uniforms.uEnergy.value = energy;
+      }
+    });
+  }
+
+  // -----------------------------------------------------------
+  // 12. Hero shape fade-in/out as you leave section 0
+  // -----------------------------------------------------------
+  function updateHeroVisibility() {
+    var d = Math.abs(scrollProgress - 0);
+    var op = Math.max(0, 1 - d * 0.9);
+    heroGroup.userData.ico.material.opacity = 0.7 * op;
+    heroGroup.userData.ring.material.opacity = 0.6 * op;
+    heroGroup.userData.ring2.material.opacity = 0.15 * op;
+    if (heroGroup.userData.burst && heroGroup.userData.burst.userData.burstMat) {
+      heroGroup.userData.burst.userData.burstMat.uniforms.uEnergy.value = 0.6 * op;
     }
   }
 
   // -----------------------------------------------------------
-  // 7. Camera parallax & loop
+  // 13. Animation loop
   // -----------------------------------------------------------
-  var mouseX = 0, mouseY = 0;
-  var targetCamX = 0, targetCamY = 1.2;
+  var clock = new THREE.Clock();
+  var mouseNX = 0, mouseNY = 0;
   window.addEventListener('mousemove', function (e) {
-    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-    mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+    mouseNX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseNY = (e.clientY / window.innerHeight) * 2 - 1;
   });
 
-  var clock = new THREE.Clock();
   function tick() {
     var t = clock.getElapsedTime();
-    pMat.uniforms.uTime.value = t;
 
-    // slow auto-rotation + parallax
-    var orbit = t * 0.06 + mouseX * 0.45;
-    var cx = Math.sin(orbit) * 6.2;
-    var cz = Math.cos(orbit) * 6.2;
-    targetCamX = cx;
-    var liftY = 1.2 - mouseY * 0.25;
+    // smooth camera lerp
+    camY += (targetCamY - camY) * 0.08;
+    camX += (targetCamX - camX) * 0.08;
+    camZ += (targetCamZ - camZ) * 0.06;
 
-    camera.position.x += (targetCamX - camera.position.x) * 0.04;
-    camera.position.z += (cz - camera.position.z) * 0.04;
-    camera.position.y += (liftY - camera.position.y) * 0.04;
-    camera.lookAt(0, 0.45, 0);
+    // mouse parallax (small)
+    camera.position.x = camX + mouseNX * 0.6;
+    camera.position.y = camY - mouseNY * 0.4;
+    camera.position.z = camZ;
+    camera.lookAt(0, camY, 0);
+
+    // stars time
+    if (sceneRefs.stars && sceneRefs.stars.userData.mat) {
+      sceneRefs.stars.userData.mat.uniforms.uTime.value = t;
+    }
+
+    // hero rotation
+    if (heroGroup) {
+      heroGroup.userData.ico.rotation.x = t * 0.18;
+      heroGroup.userData.ico.rotation.y = t * 0.24;
+      heroGroup.userData.ring.rotation.z = t * 0.12;
+      heroGroup.userData.ring2.rotation.z = -t * 0.08;
+      if (heroGroup.userData.burst && heroGroup.userData.burst.userData.burstMat) {
+        heroGroup.userData.burst.userData.burstMat.uniforms.uTime.value = t;
+      }
+    }
+
+    // clusters update
+    clusters.forEach(function (cl) {
+      // gentle group rotation
+      cl.rotation.y = Math.sin(t * 0.15 + cl.userData.project.sectionIdx) * 0.06;
+
+      // panel float
+      if (cl.userData.panels) {
+        cl.userData.panels.forEach(function (p) {
+          if (!p) return;
+          var base = p.userData.basePos;
+          var ph = p.userData.floatPhase || 0;
+          p.position.x = base.x + Math.sin(t * 0.5 + ph) * 0.08;
+          p.position.y = base.y + Math.cos(t * 0.4 + ph) * 0.10;
+          p.position.z = base.z + Math.sin(t * 0.3 + ph) * 0.06;
+          p.rotation.y = p.userData.baseRot.y + Math.sin(t * 0.25 + ph) * 0.04;
+          if (p.userData.panelMat) p.userData.panelMat.uniforms.uTime.value = t;
+          // wavebars
+          if (p.userData.bars) {
+            p.userData.bars.position.copy(p.position);
+            p.userData.bars.rotation.copy(p.rotation);
+            for (var bi = 0; bi < p.userData.bars.children.length; bi++) {
+              var b = p.userData.bars.children[bi];
+              var sy = 0.5 + Math.abs(Math.sin(t * 3 + b.userData.phase * 0.6)) * 1.2;
+              b.scale.y = sy;
+            }
+          }
+        });
+      }
+      // burst time
+      if (cl.userData.burst && cl.userData.burst.userData.burstMat) {
+        cl.userData.burst.userData.burstMat.uniforms.uTime.value = t;
+      }
+    });
+
+    updateHeroVisibility();
 
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
   }
 
   // -----------------------------------------------------------
-  // 8. Resize
+  // 14. Resize
   // -----------------------------------------------------------
   function onResize() {
     var w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    pMat.uniforms.uPxRatio.value = renderer.getPixelRatio();
   }
   window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', updateScrollState, { passive: true });
 
   // -----------------------------------------------------------
-  // 9. Boot → enter flow
+  // 15. Rail clicks (smooth scroll to section)
   // -----------------------------------------------------------
-  // start with cloud shape so render shows something faint before enter
-  setBufferFromShape('aPosA', buildCloud());
-  setBufferFromShape('aPosB', buildCloud());
-  tick();
-
-  // Pre-load shapes in background while user reads boot
-  var shapesReady = loadAllShapes();
-
-  enterBtn.addEventListener('click', function () {
-    enterBtn.disabled = true;
-    shapesReady.then(function () {
-      // hide boot, show HUD
-      boot.classList.add('is-hidden');
-      hud.classList.add('is-active');
-
-      // start audio (we're inside a user gesture now)
-      audio.volume = 0;
-      var pl = audio.play();
-      if (pl && typeof pl.catch === 'function') {
-        pl.catch(function () { muteBtn.classList.add('is-muted'); });
-      }
-      if (window.gsap) gsap.to(audio, { volume: 0.4, duration: 2.2 });
-
-      // initial HUD content
-      applyHUD(0);
-
-      // set first project shape and morph into it
-      setBufferFromShape('aPosB', SHAPE_CACHE[0]);
-      pMat.uniforms.uProgress.value = 0;
-      if (window.gsap) {
-        gsap.to(pMat.uniforms.uChaos, { value: 0.6, duration: 0.6, ease: 'power2.in' });
-        gsap.to(pMat.uniforms.uProgress, {
-          value: 1, duration: 1.6, ease: 'power2.inOut',
-          onComplete: function () {
-            setBufferFromShape('aPosA', SHAPE_CACHE[0]);
-            pMat.uniforms.uProgress.value = 0;
-          }
-        });
-        gsap.to(pMat.uniforms.uChaos, { value: 0, duration: 1.0, delay: 0.6, ease: 'power2.out' });
-      } else {
-        setBufferFromShape('aPosA', SHAPE_CACHE[0]);
-      }
+  railItems.forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      e.preventDefault();
+      var jump = parseInt(item.getAttribute('data-jump'), 10) || 0;
+      var sec = document.getElementById('sec-' + jump);
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 
   // -----------------------------------------------------------
-  // 10. Controls — arrows, keyboard, swipe, mute
+  // 16. Audio + mute
   // -----------------------------------------------------------
-  prevBtn.addEventListener('click', function () { goTo(currentIdx - 1, -1); });
-  nextBtn.addEventListener('click', function () { goTo(currentIdx + 1,  1); });
-
-  window.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowLeft')  goTo(currentIdx - 1, -1);
-    if (e.key === 'ArrowRight') goTo(currentIdx + 1,  1);
-    if (e.key === 'Escape')     window.location.href = './case-study.html';
-  });
-
-  // touch swipe
-  var touchX0 = null;
-  window.addEventListener('touchstart', function (e) {
-    if (e.touches.length === 1) touchX0 = e.touches[0].clientX;
-  }, { passive: true });
-  window.addEventListener('touchend', function (e) {
-    if (touchX0 === null) return;
-    var dx = e.changedTouches[0].clientX - touchX0;
-    if (Math.abs(dx) > 60) {
-      if (dx < 0) goTo(currentIdx + 1, 1);
-      else        goTo(currentIdx - 1, -1);
+  function startAudio() {
+    audio.volume = 0;
+    var pl = audio.play();
+    if (pl && typeof pl.catch === 'function') {
+      pl.catch(function () { muteBtn.classList.add('is-muted'); });
     }
-    touchX0 = null;
-  });
-
+    if (window.gsap) gsap.to(audio, { volume: 0.4, duration: 2.2 });
+  }
   muteBtn.addEventListener('click', function () {
     if (audio.muted || audio.paused) {
       audio.muted = false;
@@ -607,49 +830,55 @@
   });
 
   // -----------------------------------------------------------
-  // 11. Custom cursor + magnetic hot zones
+  // 17. Boot → Enter
   // -----------------------------------------------------------
-  var cursorX = window.innerWidth / 2, cursorY = window.innerHeight / 2;
-  var ringX = cursorX, ringY = cursorY;
-  window.addEventListener('mousemove', function (e) {
-    cursorX = e.clientX;
-    cursorY = e.clientY;
+  enterBtn.addEventListener('click', function () {
+    enterBtn.disabled = true;
+    boot.classList.add('is-hidden');
+    hud.classList.add('is-active');
+    startAudio();
+    // kick first reveal
+    updateScrollState();
   });
+
+  // also allow Esc to exit
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') window.location.href = './case-study.html';
+  });
+
+  // -----------------------------------------------------------
+  // 18. Custom cursor + magnetic
+  // -----------------------------------------------------------
+  var cx = window.innerWidth/2, cy = window.innerHeight/2;
+  var rx = cx, ry = cy;
+  window.addEventListener('mousemove', function (e) { cx = e.clientX; cy = e.clientY; });
   function cursorTick() {
-    ringX += (cursorX - ringX) * 0.22;
-    ringY += (cursorY - ringY) * 0.22;
-    if (cursorEl) {
-      cursorEl.style.transform = 'translate3d(' + ringX + 'px,' + ringY + 'px, 0)';
-    }
+    rx += (cx - rx) * 0.22;
+    ry += (cy - ry) * 0.22;
+    if (cursorEl) cursorEl.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
     requestAnimationFrame(cursorTick);
   }
   cursorTick();
-
-  document.querySelectorAll('.xp-arrow, .xp-target, .xp-pill, .xp-enter-btn').forEach(function (el) {
+  document.querySelectorAll('a, button, .xp-target, .xp-card').forEach(function (el) {
     el.addEventListener('mouseenter', function () { cursorEl && cursorEl.classList.add('is-hot'); });
     el.addEventListener('mouseleave', function () { cursorEl && cursorEl.classList.remove('is-hot'); });
   });
 
+  // card spotlight
+  document.querySelectorAll('.xp-card').forEach(function (card) {
+    card.addEventListener('mousemove', function (e) {
+      var r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left) / r.width  * 100) + '%');
+      card.style.setProperty('--my', ((e.clientY - r.top)  / r.height * 100) + '%');
+    });
+  });
+
   // -----------------------------------------------------------
-  // 12. Simple FPS watchdog → degrade if needed
+  // 19. Kick off
   // -----------------------------------------------------------
-  (function fpsWatch() {
-    var frames = 0;
-    var t0 = performance.now();
-    function loop() {
-      frames++;
-      var now = performance.now();
-      if (now - t0 > 2000) {
-        var fps = (frames * 1000) / (now - t0);
-        if (fps < 28 && pMat.uniforms.uSize.value > 1.2) {
-          pMat.uniforms.uSize.value *= 0.8;
-        }
-        frames = 0;
-        t0 = now;
-      }
-      requestAnimationFrame(loop);
-    }
-    loop();
-  })();
+  tick();
+  clustersReady.then(function () {
+    updateScrollState();
+  });
 
 })();
