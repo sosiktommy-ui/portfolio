@@ -104,6 +104,30 @@
   }
   typeBoot();
 
+  // boot 3D parallax — title reacts to mouse
+  (function bootParallax() {
+    var titleEl = document.querySelector('.xp-boot-title');
+    var subEl   = document.querySelector('.xp-boot-sub');
+    var ebEl    = document.querySelector('.xp-boot-eyebrow');
+    if (!titleEl) return;
+    var bx = 0, by = 0, tx = 0, ty = 0;
+    window.addEventListener('mousemove', function(e) {
+      tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    function loop() {
+      if (boot && boot.classList.contains('is-hidden')) return;
+      bx += (tx - bx) * 0.08;
+      by += (ty - by) * 0.08;
+      var rx = -by * 8, ry = bx * 12;
+      titleEl.style.transform = 'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateZ(0)';
+      if (subEl) subEl.style.transform = 'translate(' + (bx*8).toFixed(1) + 'px,' + (by*6).toFixed(1) + 'px)';
+      if (ebEl)  ebEl.style.transform  = 'translate(' + (bx*14).toFixed(1) + 'px,' + (by*10).toFixed(1) + 'px)';
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  })();
+
   // -----------------------------------------------------------
   // 3. Three.js core
   // -----------------------------------------------------------
@@ -1051,6 +1075,34 @@
 
     grow(new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1, 0), 0.88, 0.058, 4);
 
+    // long vertical trunk going DOWN through the helix (tree extends deep)
+    var trunkBottomY = -14; // covers up to ~9 helix steps
+    var trunkSegs = 12;
+    for (var ti = 0; ti < trunkSegs; ti++) {
+      var ya = -1.6 + (trunkBottomY + 1.6) * (ti / trunkSegs);
+      var yb = -1.6 + (trunkBottomY + 1.6) * ((ti + 1) / trunkSegs);
+      var ro = 0.052 * (1 - ti / (trunkSegs + 2));
+      seg(new THREE.Vector3((rnd()-0.5)*0.12, ya, (rnd()-0.5)*0.12),
+          new THREE.Vector3((rnd()-0.5)*0.18, yb, (rnd()-0.5)*0.18), Math.max(0.012, ro), 0.7);
+    }
+    // side branches at multiple depths (every ~1.5 units)
+    for (var by = -2.2; by > trunkBottomY + 1; by -= 1.5) {
+      var bn = 4 + Math.floor(rnd() * 3);
+      for (var bi2 = 0; bi2 < bn; bi2++) {
+        var bang = rnd() * Math.PI * 2;
+        var blen = 0.5 + rnd() * 0.7;
+        var endY = by + (rnd() - 0.5) * 0.6;
+        seg(new THREE.Vector3(0, by, 0),
+            new THREE.Vector3(Math.sin(bang)*blen, endY, Math.cos(bang)*blen),
+            0.011 + rnd()*0.008, 0.55);
+        // tiny sub-tip
+        var sub = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6),
+          new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
+        sub.position.set(Math.sin(bang)*blen*1.05, endY, Math.cos(bang)*blen*1.05);
+        g.add(sub);
+      }
+    }
+
     // root tendrils
     for (var ri = 0; ri < 6; ri++) {
       var ra = (ri / 6) * Math.PI * 2;
@@ -1069,16 +1121,16 @@
     var topGlow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 14, 14), topM);
     topGlow.position.y = 0.4; g.add(topGlow);
 
-    // particle cloud
-    var pCount = 700, pp = new Float32Array(pCount * 3), ps = 31337;
+    // particle cloud — distributed along the whole vertical column
+    var pCount = 1200, pp = new Float32Array(pCount * 3), ps = 31337;
     for (var pi = 0; pi < pCount; pi++) {
       ps = (ps*1664525+1013904223)&0xffffffff; var rv = (ps>>>0)/4294967295;
       ps = (ps*1664525+1013904223)&0xffffffff; var ph = (ps>>>0)/4294967295*Math.PI*2;
-      ps = (ps*1664525+1013904223)&0xffffffff; var th = (ps>>>0)/4294967295*Math.PI;
-      var rad = 0.3 + rv * 2.2;
-      pp[pi*3]   = rad*Math.sin(th)*Math.cos(ph);
-      pp[pi*3+1] = rad*Math.cos(th)*0.65 - 0.3;
-      pp[pi*3+2] = rad*Math.sin(th)*Math.sin(ph);
+      ps = (ps*1664525+1013904223)&0xffffffff; var yv = (ps>>>0)/4294967295;
+      var rad = 0.4 + rv * 3.2;
+      pp[pi*3]   = rad*Math.cos(ph);
+      pp[pi*3+1] = -14 + yv * 16; // spread from -14 up to +2
+      pp[pi*3+2] = rad*Math.sin(ph);
     }
     var pgeo = new THREE.BufferGeometry();
     pgeo.setAttribute('position', new THREE.BufferAttribute(pp, 3));
@@ -1111,24 +1163,31 @@
     var t = new THREE.CanvasTexture(cv); t.flipY = true; return t;
   }
 
-  // build orbit ring
+  // build vertical helix (panels spiral DOWN around tree)
+  var galHelixStep = 1.55;     // vertical distance between panels
+  var galHelixRadius = 2.6;    // radius around tree axis
+  var galTargetY = 0;          // target camera Y (driven by wheel)
+  var galCameraY = 0;          // smoothed actual camera Y
+  var galMaxScroll = 0;        // computed = (n-1) * helixStep
   function buildGalOrbit(sc, shots, textures) {
     var og = new THREE.Group();
-    og.rotation.x = -0.12;
-    var n = shots.length, radius = 2.65;
+    var n = shots.length;
+    galMaxScroll = (n - 1) * galHelixStep;
     shots.forEach(function(s, i) {
-      var angle = (i / n) * Math.PI * 2;
-      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false });
+      var angle = i * (Math.PI * 2 / 3.0); // ~120° between consecutive panels — nice spiral
+      var y = -i * galHelixStep;
+      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 1.075), mat);
-      mesh.position.set(Math.sin(angle)*radius, 0, Math.cos(angle)*radius);
-      mesh.lookAt(0, 0, 0);
-      // edge glow
+      mesh.position.set(Math.sin(angle)*galHelixRadius, y, Math.cos(angle)*galHelixRadius);
+      mesh.lookAt(0, y, 0);
       var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
       var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 1.22), gm);
       gmesh.position.z = 0.025; mesh.add(gmesh);
       mesh.userData.glowMat = gm;
       mesh.userData.shotIdx = i;
       mesh.userData.shotData = s;
+      mesh.userData.baseY = y;
+      mesh.userData.baseAngle = angle;
       og.add(mesh);
     });
     sc.add(og);
@@ -1160,43 +1219,44 @@
       galCamera.aspect = w / h;
       galCamera.updateProjectionMatrix();
     }
+    // tree slowly rotates (ambient)
     if (galTreeGroup) {
-      galTreeGroup.rotation.y += 0.0015;
-      if (galParticlesObj) galParticlesObj.rotation.y -= 0.0018;
+      galTreeGroup.rotation.y += 0.0008;
+      if (galParticlesObj) galParticlesObj.rotation.y -= 0.0012;
     }
+    // slow ambient rotation of whole helix so cards drift around tree
     if (galOrbitGroup) {
-      if (galDragging) {
-        galOrbitGroup.rotation.y += galRotVel;
-        galRotVel *= 0.88;
-      } else {
-        galRotVel *= 0.94;
-        galOrbitGroup.rotation.y += galRotVel;
-        // snap to nearest panel when nearly still
-        var n0 = galPanels.length;
-        if (n0 > 0 && Math.abs(galRotVel) < 0.0025) {
-          var step0 = (Math.PI * 2) / n0;
-          var nearest0 = Math.round(galOrbitGroup.rotation.y / step0) * step0;
-          galOrbitGroup.rotation.y += (nearest0 - galOrbitGroup.rotation.y) * 0.045;
-        }
+      galOrbitGroup.rotation.y += 0.0009;
+    }
+    // smooth camera descent driven by scroll
+    galCameraY += (galTargetY - galCameraY) * 0.06;
+    if (galCamera) {
+      galCamera.position.set(0, galCameraY + 0.6, 5.4);
+      galCamera.lookAt(0, galCameraY - 0.3, 0);
+    }
+    // find active panel = closest baseY to current cameraY
+    var n = galPanels.length;
+    if (n > 0) {
+      var best = 0, bestDist = Infinity;
+      for (var pi = 0; pi < n; pi++) {
+        var d = Math.abs(galPanels[pi].userData.baseY - galCameraY);
+        if (d < bestDist) { bestDist = d; best = pi; }
       }
-      var n = galPanels.length;
-      if (n > 0) {
-        var ry = galOrbitGroup.rotation.y;
-        var best = 0, bestCos = -Infinity;
-        for (var pi = 0; pi < n; pi++) {
-          var cv = Math.cos((pi/n)*Math.PI*2 + ry);
-          if (cv > bestCos) { bestCos = cv; best = pi; }
+      setGalActive(best);
+      galPanels.forEach(function(p) {
+        var dy = Math.abs(p.userData.baseY - galCameraY);
+        // visibility falloff over ~3.5 units of camera distance
+        var prox = Math.max(0, 1 - dy / 3.0);
+        var targetOp = prox * 0.95 + 0.05;
+        var targetScale = 0.78 + prox * 0.42;
+        p.scale.x += (targetScale - p.scale.x) * 0.08;
+        p.scale.y += (targetScale - p.scale.y) * 0.08;
+        if (p.material) p.material.opacity += (targetOp - p.material.opacity) * 0.08;
+        if (p.userData.glowMat) {
+          var tg = prox > 0.7 ? 0.32 * (prox - 0.7) / 0.3 : 0;
+          p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.08;
         }
-        setGalActive(best);
-        galPanels.forEach(function(p, i) {
-          var act = (i === galActiveIdx);
-          var ts = act ? 1.18 : 0.72, to = act ? 1.0 : 0.28;
-          p.scale.x += (ts - p.scale.x) * 0.09;
-          p.scale.y += (ts - p.scale.y) * 0.09;
-          if (p.material) p.material.opacity += (to - p.material.opacity) * 0.09;
-          if (p.userData.glowMat) { var tg = act ? 0.30 : 0; p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.09; }
-        });
-      }
+      });
     }
     galRenderer.render(galScene, galCamera);
   }
@@ -1221,17 +1281,20 @@
     document.body.style.overflow = 'hidden';
     var w = window.innerWidth, h = window.innerHeight;
     galScene = new THREE.Scene();
-    galCamera = new THREE.PerspectiveCamera(46, w/h, 0.1, 100);
-    galCamera.position.set(0, 0.4, 6.5);
-    galCamera.lookAt(0, 0, 0);
+    galCamera = new THREE.PerspectiveCamera(46, w/h, 0.1, 200);
+    galCameraY = 0; galTargetY = 0;
+    galCamera.position.set(0, 0.6, 5.4);
+    galCamera.lookAt(0, -0.3, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
     galRenderer.setClearColor(0x000000, 0);
-    galScene.fog = new THREE.FogExp2(0x03040a, 0.055);
+    galScene.fog = new THREE.FogExp2(0x03040a, 0.045);
     galScene.add(new THREE.AmbientLight(0xa78bfa, 0.4));
-    var pl = new THREE.PointLight(0x7c3aed, 2.5, 10);
+    var pl = new THREE.PointLight(0x7c3aed, 2.5, 14);
     pl.position.set(0, 1.5, 3.5); galScene.add(pl);
+    var pl2 = new THREE.PointLight(0x4c1d95, 1.8, 12);
+    pl2.position.set(0, -6, 2); galScene.add(pl2);
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     buildGalTree(galScene);
     var shots = data.shots, pending = shots.length;
@@ -1257,14 +1320,10 @@
         });
       }
     });
-    galCanvas.addEventListener('mousedown', onGMD);
-    galCanvas.addEventListener('mousemove', onGMM);
-    galCanvas.addEventListener('mouseup',   onGMU);
-    galCanvas.addEventListener('mouseleave',onGMU);
     galCanvas.addEventListener('click',     onGC);
     galCanvas.addEventListener('wheel',     onGWheel, { passive: false });
     galCanvas.addEventListener('touchstart', onGTS, { passive: true });
-    galCanvas.addEventListener('touchmove',  onGTM, { passive: true });
+    galCanvas.addEventListener('touchmove',  onGTM, { passive: false });
     galCanvas.addEventListener('touchend',   onGTE);
     window.addEventListener('resize', onGalResize);
     if (typeof fadeAudio === 'function') fadeAudio(0.18, 0.8);
@@ -1288,10 +1347,6 @@
     if (galRenderer) { galRenderer.dispose(); galRenderer = null; }
     galLoadedTextures.forEach(function(t) { if (t && t.dispose) t.dispose(); });
     galLoadedTextures = []; galPanels = []; galScene = null;
-    galCanvas.removeEventListener('mousedown', onGMD);
-    galCanvas.removeEventListener('mousemove', onGMM);
-    galCanvas.removeEventListener('mouseup',   onGMU);
-    galCanvas.removeEventListener('mouseleave',onGMU);
     galCanvas.removeEventListener('click',     onGC);
     galCanvas.removeEventListener('wheel',     onGWheel);
     galCanvas.removeEventListener('touchstart', onGTS);
@@ -1304,40 +1359,32 @@
   function onGWheel(e) {
     e.preventDefault();
     var delta = e.deltaY || 0;
-    galRotVel -= delta * 0.0022;
-    galRotVel = Math.max(-0.14, Math.min(0.14, galRotVel));
+    // small, smooth — delta usually ~100 per notch → 0.18 per notch
+    galTargetY -= delta * 0.0018;
+    if (galTargetY > 0.6) galTargetY = 0.6;
+    var minY = -galMaxScroll - 0.6;
+    if (galTargetY < minY) galTargetY = minY;
   }
-
-  function onGMD(e) { galDragging = true; galDragStartX = e.clientX; galDragMoved = false; galRotVel = 0; }
-  function onGMM(e) {
-    if (!galDragging) return;
-    var dx = e.clientX - galDragStartX;
-    if (Math.abs(dx) > 3) galDragMoved = true;
-    galRotVel = dx * 0.004;
-    galDragStartX = e.clientX;
-    if (galOrbitGroup) galOrbitGroup.rotation.y += galRotVel;
-  }
-  function onGMU() { galDragging = false; }
-  var galTouchX = 0;
-  function onGTS(e) { galDragging = true; galTouchX = e.touches[0].clientX; galDragMoved = false; galRotVel = 0; }
+  var galTouchY = 0;
+  function onGTS(e) { galTouchY = e.touches[0].clientY; }
   function onGTM(e) {
-    if (!galDragging) return;
-    var dx = e.touches[0].clientX - galTouchX;
-    if (Math.abs(dx) > 5) galDragMoved = true;
-    galRotVel = dx * 0.004; galTouchX = e.touches[0].clientX;
-    if (galOrbitGroup) galOrbitGroup.rotation.y += galRotVel;
+    if (e.cancelable) e.preventDefault();
+    var ty = e.touches[0].clientY;
+    var dy = galTouchY - ty;
+    galTargetY -= dy * 0.008;
+    if (galTargetY > 0.6) galTargetY = 0.6;
+    var minY = -galMaxScroll - 0.6;
+    if (galTargetY < minY) galTargetY = minY;
+    galTouchY = ty;
   }
-  function onGTE() { galDragging = false; }
+  function onGTE() {}
   function onGC(e) {
-    if (galDragMoved || !galOrbitGroup || !galCamera) return;
+    if (!galOrbitGroup || !galCamera) return;
     galRaycaster.setFromCamera(new THREE.Vector2((e.clientX/galCanvas.clientWidth)*2-1, -((e.clientY/galCanvas.clientHeight)*2-1)), galCamera);
     var hits = galRaycaster.intersectObjects(galPanels, false);
     if (hits.length && hits[0].object.userData.shotIdx !== undefined) {
-      var idx = hits[0].object.userData.shotIdx, n = galPanels.length;
-      var diff = idx - galActiveIdx;
-      if (diff > n/2) diff -= n; if (diff < -n/2) diff += n;
-      galRotVel = 0;
-      galOrbitGroup.rotation.y -= (diff/n)*Math.PI*2;
+      var idx = hits[0].object.userData.shotIdx;
+      galTargetY = galPanels[idx].userData.baseY;
     }
   }
 
@@ -1345,16 +1392,15 @@
   window.addEventListener('keydown', function(e) {
     if (!galleryOpen) return;
     if (e.key === 'Escape') { closeGallery(); e.stopImmediatePropagation(); return; }
-    if (!galOrbitGroup || galPanels.length < 2) return;
-    var n = galPanels.length;
-    if (e.key === 'ArrowRight') { galOrbitGroup.rotation.y -= (1/n)*Math.PI*2; galRotVel = 0; }
-    if (e.key === 'ArrowLeft')  { galOrbitGroup.rotation.y += (1/n)*Math.PI*2; galRotVel = 0; }
+    if (galPanels.length < 2) return;
+    if (e.key === 'ArrowDown') { galTargetY -= galHelixStep; if (galTargetY < -galMaxScroll - 0.6) galTargetY = -galMaxScroll - 0.6; }
+    if (e.key === 'ArrowUp')   { galTargetY += galHelixStep; if (galTargetY > 0.6) galTargetY = 0.6; }
   });
   if (galPrevBtn) galPrevBtn.addEventListener('click', function() {
-    if (galOrbitGroup && galPanels.length > 1) { galOrbitGroup.rotation.y += (1/galPanels.length)*Math.PI*2; galRotVel = 0; }
+    if (galPanels.length > 1) { galTargetY += galHelixStep; if (galTargetY > 0.6) galTargetY = 0.6; }
   });
   if (galNextBtn) galNextBtn.addEventListener('click', function() {
-    if (galOrbitGroup && galPanels.length > 1) { galOrbitGroup.rotation.y -= (1/galPanels.length)*Math.PI*2; galRotVel = 0; }
+    if (galPanels.length > 1) { galTargetY -= galHelixStep; if (galTargetY < -galMaxScroll - 0.6) galTargetY = -galMaxScroll - 0.6; }
   });
 
   // -----------------------------------------------------------
