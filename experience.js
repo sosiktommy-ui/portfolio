@@ -128,6 +128,113 @@
     requestAnimationFrame(loop);
   })();
 
+  // 3D boot background — wireframe core + orbiting rings + particle field
+  (function bootScene() {
+    var cvs = document.getElementById('xp-boot-canvas');
+    if (!cvs || typeof THREE === 'undefined') return;
+    var rdr = new THREE.WebGLRenderer({ canvas: cvs, antialias: true, alpha: true });
+    rdr.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    var scn = new THREE.Scene();
+    var cam = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+    cam.position.set(0, 0, 6);
+
+    // central icosahedron — solid dark + wireframe glow on top
+    var icoGeo = new THREE.IcosahedronGeometry(1.4, 1);
+    var icoSolid = new THREE.Mesh(icoGeo, new THREE.MeshBasicMaterial({
+      color: 0x0a0612, transparent: true, opacity: 0.85
+    }));
+    var icoWire = new THREE.Mesh(icoGeo, new THREE.MeshBasicMaterial({
+      color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.55
+    }));
+    var icoGroup = new THREE.Group();
+    icoGroup.add(icoSolid);
+    icoGroup.add(icoWire);
+    // inner pulse core
+    var pulseCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 18, 18),
+      new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    icoGroup.add(pulseCore);
+    scn.add(icoGroup);
+
+    // orbiting tori (rings)
+    var rings = [];
+    for (var ri = 0; ri < 3; ri++) {
+      var ring = new THREE.Mesh(
+        new THREE.TorusGeometry(2.2 + ri * 0.55, 0.008, 8, 128),
+        new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.35 - ri * 0.08, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      ring.rotation.x = Math.PI * (0.25 + ri * 0.18);
+      ring.rotation.y = ri * 0.7;
+      scn.add(ring);
+      rings.push(ring);
+    }
+
+    // particle field
+    var pCount = 600;
+    var pPos = new Float32Array(pCount * 3);
+    for (var i = 0; i < pCount; i++) {
+      var th = Math.random() * Math.PI * 2;
+      var ph = Math.acos(2 * Math.random() - 1);
+      var r  = 3 + Math.random() * 6;
+      pPos[i*3]   = r * Math.sin(ph) * Math.cos(th);
+      pPos[i*3+1] = r * Math.sin(ph) * Math.sin(th);
+      pPos[i*3+2] = r * Math.cos(ph);
+    }
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    var pMat = new THREE.PointsMaterial({ color: 0xc4b5fd, size: 0.028, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+    var pts = new THREE.Points(pGeo, pMat);
+    scn.add(pts);
+
+    // mouse parallax
+    var mx = 0, my = 0, cx = 0, cy = 0;
+    window.addEventListener('mousemove', function(e) {
+      mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+      my = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    function resize() {
+      var w = cvs.clientWidth || window.innerWidth;
+      var h = cvs.clientHeight || window.innerHeight;
+      rdr.setSize(w, h, false);
+      cam.aspect = w / h;
+      cam.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    var t = 0;
+    function tick() {
+      if (boot && boot.classList.contains('is-hidden')) {
+        // freeze rendering once hidden but keep RAF idle
+        requestAnimationFrame(tick);
+        return;
+      }
+      t += 0.01;
+      cx += (mx - cx) * 0.05;
+      cy += (my - cy) * 0.05;
+      icoGroup.rotation.y += 0.004;
+      icoGroup.rotation.x = Math.sin(t * 0.3) * 0.15 + cy * 0.2;
+      icoGroup.rotation.z = cx * 0.18;
+      icoWire.scale.setScalar(1 + Math.sin(t * 1.4) * 0.04);
+      pulseCore.scale.setScalar(0.85 + Math.sin(t * 2.0) * 0.18);
+      pulseCore.material.opacity = 0.7 + Math.sin(t * 2.0) * 0.25;
+      for (var k = 0; k < rings.length; k++) {
+        rings[k].rotation.z += 0.002 + k * 0.0015;
+        rings[k].rotation.x += 0.0008;
+      }
+      pts.rotation.y += 0.0006;
+      pts.rotation.x += 0.0003;
+      cam.position.x = cx * 0.6;
+      cam.position.y = -cy * 0.4;
+      cam.lookAt(0, 0, 0);
+      rdr.render(scn, cam);
+      requestAnimationFrame(tick);
+    }
+    tick();
+  })();
+
   // -----------------------------------------------------------
   // 3. Three.js core
   // -----------------------------------------------------------
@@ -1219,14 +1326,14 @@
       galCamera.aspect = w / h;
       galCamera.updateProjectionMatrix();
     }
-    // tree slowly rotates (ambient)
+    // tree gets a very gentle scroll-driven sway (no autonomous spinning)
     if (galTreeGroup) {
-      galTreeGroup.rotation.y += 0.0008;
-      if (galParticlesObj) galParticlesObj.rotation.y -= 0.0012;
+      galTreeGroup.rotation.y = galCameraY * 0.12;
+      if (galParticlesObj) galParticlesObj.rotation.y = -galCameraY * 0.08;
     }
-    // slow ambient rotation of whole helix so cards drift around tree
+    // orbit rotation is DRIVEN BY SCROLL — cards spiral as user descends
     if (galOrbitGroup) {
-      galOrbitGroup.rotation.y += 0.0009;
+      galOrbitGroup.rotation.y = -galCameraY * 0.55;
     }
     // smooth camera descent driven by scroll
     galCameraY += (galTargetY - galCameraY) * 0.06;

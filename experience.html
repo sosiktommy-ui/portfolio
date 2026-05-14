@@ -9,25 +9,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./experience.css?v=20260514g">
+  <link rel="stylesheet" href="./experience.css?v=20260514h">
 </head>
 <body class="xp-body">
 
   <!-- ========== BOOT / ENTRY OVERLAY ========== -->
   <div id="xp-boot" class="xp-boot">
+    <canvas id="xp-boot-canvas" class="xp-boot-canvas" aria-hidden="true"></canvas>
+    <div class="xp-boot-grid" aria-hidden="true"></div>
     <div class="xp-boot-scanlines" aria-hidden="true"></div>
     <div class="xp-boot-noise" aria-hidden="true"></div>
+    <div class="xp-boot-vignette" aria-hidden="true"></div>
+    <div class="xp-boot-corner xp-bc-tl" aria-hidden="true"><span>SYS · 01</span><i></i></div>
+    <div class="xp-boot-corner xp-bc-tr" aria-hidden="true"><i></i><span><span id="xp-boot-loc">POLAND</span> · 52.23°N</span></div>
+    <div class="xp-boot-corner xp-bc-bl" aria-hidden="true"><i></i><span>WEBGL · ACTIVE</span></div>
+    <div class="xp-boot-corner xp-bc-br" aria-hidden="true"><span>CH · 3D MODE</span><i></i></div>
     <div class="xp-boot-inner">
-      <p class="xp-boot-eyebrow"><span id="xp-boot-loc">POLAND</span> <span class="xp-dot">·</span> FULL-STACK</p>
-      <h1 class="xp-boot-title" data-text="TOMASHCHUK">TOMASHCHUK</h1>
-      <p class="xp-boot-sub">VLADYSLAV <span class="xp-dot">·</span> PRODUCT ENGINEER</p>
+      <p class="xp-boot-eyebrow"><span class="xp-boot-bracket">[</span> 3D · INTERACTIVE PORTFOLIO <span class="xp-boot-bracket">]</span></p>
+      <h1 class="xp-boot-title" data-text="3D MODE">3D&nbsp;MODE</h1>
+      <p class="xp-boot-sub">VLADYSLAV TOMASHCHUK <span class="xp-dot">·</span> PRODUCT ENGINEER <span class="xp-dot">·</span> POLAND</p>
+      <div class="xp-boot-meters" aria-hidden="true">
+        <div class="xp-meter"><span class="xp-meter-lbl">GPU</span><span class="xp-meter-bar"><i style="width:82%"></i></span><span class="xp-meter-val">82%</span></div>
+        <div class="xp-meter"><span class="xp-meter-lbl">FPS</span><span class="xp-meter-bar"><i style="width:96%"></i></span><span class="xp-meter-val">60</span></div>
+        <div class="xp-meter"><span class="xp-meter-lbl">MEM</span><span class="xp-meter-bar"><i style="width:48%"></i></span><span class="xp-meter-val">2.1G</span></div>
+      </div>
       <pre id="xp-boot-log" class="xp-boot-log" aria-hidden="true"></pre>
       <button id="xp-enter" class="xp-enter-btn" type="button">
         <span class="xp-enter-line"></span>
         ENTER EXPERIENCE
         <span class="xp-enter-arrow">→</span>
       </button>
-      <p class="xp-boot-hint">scroll · audio · keyboard ↓</p>
+      <p class="xp-boot-hint">scroll · drag · audio · keyboard ↓</p>
     </div>
   </div>
 
@@ -337,6 +349,6 @@
 
   <script src="./three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-  <script src="./experience.js?v=20260514g"></script>
+  <script src="./experience.js?v=20260514h"></script>
 </body>
 </html>
