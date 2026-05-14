@@ -1383,7 +1383,7 @@
     // HELIX / SPIRAL — each photo descends AND rotates around the column
     var spiralR        = 3.8;
     var spiralAngStep  = (Math.PI * 2) / 3.0;   // 120 deg apart — exactly 3 per turn
-    var spiralYStep    = 0.85;                   // vertical spacing per photo — clear staircase
+    var spiralYStep    = 1.20;                   // vertical spacing per photo — clear staircase
     var spiralStartY   = 1.2;
     shots.forEach(function(s, i) {
       var theta = i * spiralAngStep;
@@ -1477,14 +1477,14 @@
       if (galComposer) galComposer.setSize(w, h);
     }
     // smooth progress
-    galProg += (galTargetProg - galProg) * 0.085;
+    galProg += (galTargetProg - galProg) * 0.065;
     var n = galPanels.length;
 
     // ----- SPIRAL DESCENT CAMERA -----
     // Each photo scroll step = 120deg rotation + descent (like Secret Sky / helix fly-through)
     // helix params MUST match buildGalOrbit
     var spiralAngStep = (Math.PI * 2) / 3.0;   // 120 deg per photo
-    var spiralYStep   = 0.85;                   // MUST match buildGalOrbit
+    var spiralYStep   = 1.20;                   // MUST match buildGalOrbit
     var spiralStartY  = 1.2;
     var activeIdxF = Math.max(0, Math.min(n > 0 ? n - 1 : 0, galProg));
     var activePhotoY  = spiralStartY - activeIdxF * spiralYStep;
@@ -1492,19 +1492,19 @@
     // photos[i] are at i*spiralAngStep, camera must be at that angle + PI
     galCamAngTgt = galProg * spiralAngStep + Math.PI;
     // gentle lerp — but no extra drift so active photo always ends up centered
-    galCamAng += (galCamAngTgt - galCamAng) * 0.055;
+    galCamAng += (galCamAngTgt - galCamAng) * 0.038;
     var camX = Math.cos(galCamAng) * galCamRadius;
     var camZ = Math.sin(galCamAng) * galCamRadius;
     // camera descends WITH the helix
-    var camYTarget = activePhotoY + 2.0;
-    galCamHeight += (camYTarget - galCamHeight) * 0.04;
+    var camYTarget = activePhotoY + 1.6;
+    galCamHeight += (camYTarget - galCamHeight) * 0.028;
     // mouse adds subtle sway
-    var pY = galCamHeight + galMouseY * -0.55;
-    var pX = camX + galMouseX * 0.35;
+    var pY = galCamHeight + galMouseY * -0.4;
+    var pX = camX + galMouseX * 0.25;
     if (galCamera) {
-      galCamera.position.x += (pX - galCamera.position.x) * 0.07;
-      galCamera.position.y += (pY - galCamera.position.y) * 0.07;
-      galCamera.position.z += (camZ - galCamera.position.z) * 0.07;
+      galCamera.position.x += (pX - galCamera.position.x) * 0.05;
+      galCamera.position.y += (pY - galCamera.position.y) * 0.05;
+      galCamera.position.z += (camZ - galCamera.position.z) * 0.05;
       galCamera.lookAt(0, activePhotoY + 0.3, 0);
     }
 
@@ -1557,18 +1557,20 @@
         var theta = p.userData.baseTheta;
         var tx = Math.cos(theta) * pullR;
         var tz = Math.sin(theta) * pullR;
-        p.position.x += (tx - p.position.x) * 0.07;
-        p.position.z += (tz - p.position.z) * 0.07;
+        p.position.x += (tx - p.position.x) * 0.05;
+        p.position.z += (tz - p.position.z) * 0.05;
         // always face camera so photos look like floating screens
         var tmp = new THREE.Object3D();
         tmp.position.copy(p.position);
         tmp.lookAt(camPos);
-        p.quaternion.slerp(tmp.quaternion, 0.09);
-        // side-visibility: photos on the FAR side of the column (opposite camera) are hidden
-        // cos(theta - camAng): +1 = same side as cam, -1 = directly behind column
-        var sideCos = Math.cos(theta - galCamAng);
-        // sideFactor: 0 when behind, 1 when in front — sharp cutoff near the column edge
-        var sideFactor = Math.max(0, Math.min(1, (sideCos + 0.25) / 0.65));
+        p.quaternion.slerp(tmp.quaternion, 0.06);
+        // side-visibility: hide photos that are behind the column from camera's POV
+        // camera is at galCamAng; photo is at theta. Photo is VISIBLE when they're
+        // on OPPOSITE sides (camera looks inward). cos(theta - camAng) = -1 means
+        // photo is directly in front of camera. So we NEGATE for the fade.
+        var sideCos = -Math.cos(theta - galCamAng);
+        // sideFactor: 1 = photo faces camera, 0 = photo is hidden behind column
+        var sideFactor = Math.max(0, Math.min(1, (sideCos + 0.35) / 0.70));
         // scale — active bigger, far ones smaller
         var ts  = 0.65 + focus * 0.45;   // 0.65 (far) .. 1.10 (active)
         // photo opacity: distance-based * side-visibility (0 when behind column)
@@ -1577,13 +1579,13 @@
         var tgl = focus > 0.3 ? (focus - 0.3) * 0.55 * sideFactor : 0;
         var tfr = (0.18 + focus * 0.82) * sideFactor;
         var tbz = (0.35 + focus * 0.55) * sideFactor;
-        p.scale.x += (ts - p.scale.x) * 0.10;
-        p.scale.y += (ts - p.scale.y) * 0.10;
-        p.scale.z += (ts - p.scale.z) * 0.10;
-        if (p.userData.photoMat) p.userData.photoMat.opacity += (top - p.userData.photoMat.opacity) * 0.10;
-        if (p.userData.frameMat) p.userData.frameMat.opacity += (tfr - p.userData.frameMat.opacity) * 0.10;
-        if (p.userData.glowMat)  p.userData.glowMat.opacity  += (tgl - p.userData.glowMat.opacity) * 0.10;
-        if (p.userData.bezelMat) p.userData.bezelMat.opacity += (tbz - p.userData.bezelMat.opacity) * 0.10;
+        p.scale.x += (ts - p.scale.x) * 0.07;
+        p.scale.y += (ts - p.scale.y) * 0.07;
+        p.scale.z += (ts - p.scale.z) * 0.07;
+        if (p.userData.photoMat) p.userData.photoMat.opacity += (top - p.userData.photoMat.opacity) * 0.07;
+        if (p.userData.frameMat) p.userData.frameMat.opacity += (tfr - p.userData.frameMat.opacity) * 0.07;
+        if (p.userData.glowMat)  p.userData.glowMat.opacity  += (tgl - p.userData.glowMat.opacity) * 0.07;
+        if (p.userData.bezelMat) p.userData.bezelMat.opacity += (tbz - p.userData.bezelMat.opacity) * 0.07;
         p.renderOrder = 10 - Math.round(ad * ad);
       }
     }
@@ -1717,9 +1719,39 @@
       np.position.set(0, ySeed || 0, z);
       galScene.add(np);
     }
-    nebPlane(-20, 'rgba(236,72,153,0.55)', 'rgba(124,58,237,0.28)', 0.85, 0);
-    nebPlane(-28, 'rgba(6,182,212,0.40)',  'rgba(76,29,149,0.15)',  0.65, -5);
-    nebPlane(-18, 'rgba(139,92,246,0.35)', 'rgba(236,72,153,0.12)', 0.50, -10);
+    // Full 360° nebula sky — large back-sided sphere wraps entire scene
+    (function makeNebulaSky() {
+      var cv = document.createElement('canvas'); cv.width = 2048; cv.height = 1024;
+      var cx = cv.getContext('2d');
+      cx.fillStyle = '#010009'; cx.fillRect(0, 0, 2048, 1024);
+      // scatter 8 big nebula blobs at various UV coords
+      var blobs = [
+        {x:0.08, y:0.35, r:0.38, c1:'rgba(236,72,153,0.52)',  c2:'rgba(124,58,237,0.0)'},
+        {x:0.30, y:0.65, r:0.28, c1:'rgba(6,182,212,0.42)',   c2:'rgba(0,0,0,0)'},
+        {x:0.55, y:0.25, r:0.32, c1:'rgba(139,92,246,0.48)',  c2:'rgba(0,0,0,0)'},
+        {x:0.75, y:0.70, r:0.30, c1:'rgba(236,72,153,0.40)',  c2:'rgba(76,29,149,0.0)'},
+        {x:0.90, y:0.40, r:0.26, c1:'rgba(6,182,212,0.35)',   c2:'rgba(0,0,0,0)'},
+        {x:0.20, y:0.80, r:0.22, c1:'rgba(167,139,250,0.38)', c2:'rgba(0,0,0,0)'},
+        {x:0.65, y:0.50, r:0.35, c1:'rgba(124,58,237,0.32)',  c2:'rgba(0,0,0,0)'},
+        {x:0.45, y:0.15, r:0.24, c1:'rgba(236,72,153,0.30)',  c2:'rgba(0,0,0,0)'}
+      ];
+      blobs.forEach(function(b) {
+        var bx = b.x * 2048, by = b.y * 1024, br = b.r * 1024;
+        var g = cx.createRadialGradient(bx, by, 0, bx, by, br);
+        g.addColorStop(0, b.c1); g.addColorStop(1, b.c2);
+        cx.fillStyle = g; cx.fillRect(0, 0, 2048, 1024);
+      });
+      // fine star-dust noise
+      for (var s = 0; s < 1800; s++) {
+        var sx = Math.random()*2048, sy = Math.random()*1024, sr = 0.5 + Math.random()*1.5;
+        var sa = 0.3 + Math.random()*0.7;
+        cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI*2);
+        cx.fillStyle = 'rgba(255,255,255,' + sa + ')'; cx.fill();
+      }
+      var ntex = new THREE.CanvasTexture(cv);
+      var nmat = new THREE.MeshBasicMaterial({ map: ntex, side: THREE.BackSide, transparent: true, opacity: 0.88, depthWrite: false, blending: THREE.AdditiveBlending });
+      galScene.add(new THREE.Mesh(new THREE.SphereGeometry(60, 32, 24), nmat));
+    })();
 
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     galColumnData = null; galParticlesObj = null; galTreeGroup = null;
