@@ -83,6 +83,21 @@
   var sections  = document.querySelectorAll('.xp-sec');
 
   // -----------------------------------------------------------
+  // 1b. ENTER button — registered immediately, before any THREE setup
+  //     (functions startAudio / updateScrollState are hoisted)
+  // -----------------------------------------------------------
+  if (enterBtn) {
+    enterBtn.addEventListener('click', function onEnter() {
+      enterBtn.removeEventListener('click', onEnter);
+      enterBtn.disabled = true;
+      if (boot) boot.classList.add('is-hidden');
+      if (hud)  hud.classList.add('is-active');
+      try { startAudio(); } catch(e) {}
+      try { updateScrollState(); } catch(e) {}
+    });
+  }
+
+  // -----------------------------------------------------------
   // 2. Boot log
   // -----------------------------------------------------------
   var BOOT_LINES = [
@@ -1029,16 +1044,8 @@
   });
 
   // -----------------------------------------------------------
-  // 17. Boot в†’ Enter
+  // 17. Boot -> Enter  (listener registered early in section 1b)
   // -----------------------------------------------------------
-  enterBtn.addEventListener('click', function () {
-    enterBtn.disabled = true;
-    boot.classList.add('is-hidden');
-    hud.classList.add('is-active');
-    startAudio();
-    // kick first reveal
-    updateScrollState();
-  });
 
   // also allow Esc to exit
   window.addEventListener('keydown', function (e) {
