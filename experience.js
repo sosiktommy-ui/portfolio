@@ -1273,13 +1273,6 @@
     var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     var cx = cv.getContext('2d');
     // base gradient
-
-  // canvas texture for AI Voice node cards — dashboard-like module
-  function makeNodeTex(label) {
-    var W = 720, H = 450;
-    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    var cx = cv.getContext('2d');
-    // base gradient
     var bg = cx.createLinearGradient(0, 0, W, H);
     bg.addColorStop(0, '#100925'); bg.addColorStop(0.6, '#0a0716'); bg.addColorStop(1, '#04020c');
     cx.fillStyle = bg; cx.fillRect(0, 0, W, H);
