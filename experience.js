@@ -1482,16 +1482,16 @@
 
     // ----- SPIRAL DESCENT CAMERA -----
     // Each photo scroll step = 120deg rotation + descent (like Secret Sky / helix fly-through)
-    var slowDrift  = now * 0.000035;
     // helix params MUST match buildGalOrbit
     var spiralAngStep = (Math.PI * 2) / 3.0;   // 120 deg per photo
     var spiralYStep   = 0.60;
     var spiralStartY  = 1.2;
     var activeIdxF = Math.max(0, Math.min(n > 0 ? n - 1 : 0, galProg));
     var activePhotoY  = spiralStartY - activeIdxF * spiralYStep;
-    // camera CONTINUOUSLY rotates: +120 deg per photo scrolled
-    // photos are at angle i*spiralAngStep, camera is on opposite side (+PI) looking inward
-    galCamAngTgt = galProg * spiralAngStep + Math.PI + slowDrift;
+    // camera angle = exactly opposite active photo (+PI)
+    // photos[i] are at i*spiralAngStep, camera must be at that angle + PI
+    galCamAngTgt = galProg * spiralAngStep + Math.PI;
+    // gentle lerp — but no extra drift so active photo always ends up centered
     galCamAng += (galCamAngTgt - galCamAng) * 0.055;
     var camX = Math.cos(galCamAng) * galCamRadius;
     var camZ = Math.sin(galCamAng) * galCamRadius;
@@ -1606,9 +1606,10 @@
     galScene = new THREE.Scene();
     galCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 200);
     galTargetProg = 0; galProg = 0;
-    galCamAng = 0; galCamAngTgt = 0;
+    galCamAng = Math.PI; galCamAngTgt = Math.PI;
     galCamHeight = 3.2;  // start above spiral top
-    galCamera.position.set(0, galCamHeight, galCamRadius);
+    // photo 0 is at theta=0, so camera must start at theta=PI (directly opposite)
+    galCamera.position.set(-galCamRadius, galCamHeight, 0);
     galCamera.lookAt(0, 0, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
