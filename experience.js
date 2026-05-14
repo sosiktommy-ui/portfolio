@@ -1165,12 +1165,19 @@
       if (galParticlesObj) galParticlesObj.rotation.y -= 0.0018;
     }
     if (galOrbitGroup) {
-      if (!galDragging) {
-        galRotVel *= 0.93;
-        galOrbitGroup.rotation.y += galRotVel + 0.0025;
-      } else {
+      if (galDragging) {
         galOrbitGroup.rotation.y += galRotVel;
         galRotVel *= 0.88;
+      } else {
+        galRotVel *= 0.94;
+        galOrbitGroup.rotation.y += galRotVel;
+        // snap to nearest panel when nearly still
+        var n0 = galPanels.length;
+        if (n0 > 0 && Math.abs(galRotVel) < 0.0025) {
+          var step0 = (Math.PI * 2) / n0;
+          var nearest0 = Math.round(galOrbitGroup.rotation.y / step0) * step0;
+          galOrbitGroup.rotation.y += (nearest0 - galOrbitGroup.rotation.y) * 0.045;
+        }
       }
       var n = galPanels.length;
       if (n > 0) {
@@ -1255,6 +1262,7 @@
     galCanvas.addEventListener('mouseup',   onGMU);
     galCanvas.addEventListener('mouseleave',onGMU);
     galCanvas.addEventListener('click',     onGC);
+    galCanvas.addEventListener('wheel',     onGWheel, { passive: false });
     galCanvas.addEventListener('touchstart', onGTS, { passive: true });
     galCanvas.addEventListener('touchmove',  onGTM, { passive: true });
     galCanvas.addEventListener('touchend',   onGTE);
@@ -1285,11 +1293,19 @@
     galCanvas.removeEventListener('mouseup',   onGMU);
     galCanvas.removeEventListener('mouseleave',onGMU);
     galCanvas.removeEventListener('click',     onGC);
+    galCanvas.removeEventListener('wheel',     onGWheel);
     galCanvas.removeEventListener('touchstart', onGTS);
     galCanvas.removeEventListener('touchmove',  onGTM);
     galCanvas.removeEventListener('touchend',   onGTE);
     window.removeEventListener('resize', onGalResize);
     if (typeof fadeAudio === 'function' && !audioMuted) fadeAudio(0.35, 1.0);
+  }
+
+  function onGWheel(e) {
+    e.preventDefault();
+    var delta = e.deltaY || 0;
+    galRotVel -= delta * 0.0022;
+    galRotVel = Math.max(-0.14, Math.min(0.14, galRotVel));
   }
 
   function onGMD(e) { galDragging = true; galDragStartX = e.clientX; galDragMoved = false; galRotVel = 0; }
