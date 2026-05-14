@@ -1766,29 +1766,24 @@
     // background planets
     (function makePlanets() {
       var defs = [
-        { pos:[28,-8,-42], r:5.5, c1:'#7c3aed', c2:'#1e0040' },
-        { pos:[-38, 5,-50], r:7.0, c1:'#0e7490', c2:'#001a22' },
-        { pos:[ 22, 20,-48], r:3.8, c1:'#be185d', c2:'#2d0018' }
+        { pos:[28,-8,-42],  r:5.5, ca:'rgba(124,58,237,1)',  cb:'rgba(30,0,64,1)'  },
+        { pos:[-38, 5,-50], r:7.0, ca:'rgba(14,116,144,1)',  cb:'rgba(0,26,34,1)'  },
+        { pos:[ 22, 20,-48],r:3.8, ca:'rgba(190,24,93,1)',   cb:'rgba(45,0,24,1)'  }
       ];
       defs.forEach(function(d) {
         var cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;
         var cx = cv.getContext('2d');
-        var g = cx.createRadialGradient(200,180,20, 256,256,256);
-        g.addColorStop(0, '#ffffff');
-        g.addColorStop(0.15, d.c1);
-        g.addColorStop(0.7, d.c2);
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        cx.fillStyle = g; cx.fillRect(0,0,512,512);
-        // haze ring
-        var h = cx.createRadialGradient(256,256,220,256,256,300);
-        h.addColorStop(0, 'rgba(255,255,255,0)');
-        h.addColorStop(0.5, d.c1.replace(')',',0.18)').replace('#','rgba(').replace(/([0-9a-f]{2})/gi,function(m){return parseInt(m,16)+','}));
-        h.addColorStop(1, 'rgba(0,0,0,0)');
+        var g = cx.createRadialGradient(200, 180, 20, 256, 256, 256);
+        g.addColorStop(0,    'rgba(255,255,255,1)');
+        g.addColorStop(0.15, d.ca);
+        g.addColorStop(0.7,  d.cb);
+        g.addColorStop(1,    'rgba(0,0,0,0)');
+        cx.fillStyle = g; cx.fillRect(0, 0, 512, 512);
         var ptex = new THREE.CanvasTexture(cv);
         var pmat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0.82, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
         var pm = new THREE.Mesh(new THREE.PlaneGeometry(d.r*2, d.r*2), pmat);
         pm.position.set(d.pos[0], d.pos[1], d.pos[2]);
-        pm.lookAt(0,0,0);
+        pm.lookAt(0, 0, 0);
         galScene.add(pm);
       });
     })();
