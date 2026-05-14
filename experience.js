@@ -1,5 +1,5 @@
-/* =============================================================
-   /3D MODE — Immersive scroll experience runtime
+﻿/* =============================================================
+   /3D MODE вЂ” Immersive scroll experience runtime
    Activetheory-style scroll-driven 3D stage with floating
    project panels, particle bursts, parallax atmospherics.
 
@@ -12,12 +12,12 @@
   // 0. Project data + scene layout
   // -----------------------------------------------------------
   // Sections in scrollable DOM:
-  //   0 → Hero (abstract orbit shapes)
-  //   1 → Ticketing      (cluster A)
-  //   2 → Task Control   (cluster B)
-  //   3 → AI Voice       (waveform cluster C)
-  //   4 → Stack          (formation: panels arrange into grid)
-  //   5 → Connect        (panels orbit around center)
+  //   0 в†’ Hero (abstract orbit shapes)
+  //   1 в†’ Ticketing      (cluster A)
+  //   2 в†’ Task Control   (cluster B)
+  //   3 в†’ AI Voice       (waveform cluster C)
+  //   4 в†’ Stack          (formation: panels arrange into grid)
+  //   5 в†’ Connect        (panels orbit around center)
 
   var PROJECTS = [
     {
@@ -53,7 +53,7 @@
       sectionIdx: 3,
       tintHex: 0xf0abfc,   // pink-violet
       accentHex: 0xff9ad9,
-      images: []  // procedural only — no screenshots available
+      images: []  // procedural only вЂ” no screenshots available
     }
   ];
 
@@ -275,7 +275,7 @@
         ' float aaw = fwidth(d);',
         ' float maskInside = 1.0 - smoothstep(0.0, aaw*1.5, d);',
         ' if (maskInside <= 0.001) discard;',
-        // tex sample — textures use flipY=true so sample uv directly
+        // tex sample вЂ” textures use flipY=true so sample uv directly
         ' vec4 t = texture2D(uTex, vUv);',
         ' vec3 col = t.rgb;',
         // mild tint multiply
@@ -335,7 +335,7 @@
         uPx:     { value: renderer.getPixelRatio() },
         uColor1: { value: new THREE.Color(color1) },
         uColor2: { value: new THREE.Color(color2) },
-        uEnergy: { value: 0 }    // 0..1 — how active this cluster is (driven by scroll)
+        uEnergy: { value: 0 }    // 0..1 вЂ” how active this cluster is (driven by scroll)
       },
       vertexShader: [
         'attribute vec3 aSeed;',
@@ -436,14 +436,14 @@
   })();
 
   // -----------------------------------------------------------
-  // 9. Project clusters — placed at section Y positions
+  // 9. Project clusters вЂ” placed at section Y positions
   // -----------------------------------------------------------
   // Layout strategy:
   //   sectionIdx 1 (Ticketing):    Y = -STOP_GAP   (we move camera DOWN in -Y as we scroll)
   //   sectionIdx 2 (Task Control): Y = -2*STOP_GAP
   //   sectionIdx 3 (AI Voice):     Y = -3*STOP_GAP
-  //   sectionIdx 4 (Stack):        Y = -4*STOP_GAP — formation
-  //   sectionIdx 5 (Connect):      Y = -5*STOP_GAP — orbit
+  //   sectionIdx 4 (Stack):        Y = -4*STOP_GAP вЂ” formation
+  //   sectionIdx 5 (Connect):      Y = -5*STOP_GAP вЂ” orbit
 
   var clusters = [];   // each: { group, panels[], burst, sectionIdx, basis }
 
@@ -481,7 +481,7 @@
       [ 0.2,  -2.0, -5.2,   0.0,    0.02,  2.8, 1.75]
     ];
 
-    // For procedural-only project (AI Voice — no images): build abstract panels with gradient texture
+    // For procedural-only project (AI Voice вЂ” no images): build abstract panels with gradient texture
     if (imgs.length === 0) {
       var grad = makeGradientTexture(project.tintHex, project.accentHex);
       for (var i = 0; i < positions.length; i++) {
@@ -552,7 +552,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = 'bold 40px "Space Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('AI · VOICE', 256, 160);
+    ctx.fillText('AI В· VOICE', 256, 160);
     ctx.font = '14px "Space Mono", monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText('[ ACTIVE_LISTENER_v3 ]', 256, 192);
@@ -634,7 +634,7 @@
     var frac = scrollProgress - floorIdx;
 
     // base x per section
-    var XS = [0, -1.4, 1.4, -1.4, 0, 0];   // mirror of cluster x (cluster x = ±3.2, push camera slightly toward them)
+    var XS = [0, -1.4, 1.4, -1.4, 0, 0];   // mirror of cluster x (cluster x = В±3.2, push camera slightly toward them)
     var xa = XS[floorIdx] || 0;
     var xb = XS[Math.min(floorIdx + 1, NUM_STOPS - 1)] || 0;
     targetCamX = xa + (xb - xa) * frac;
@@ -671,7 +671,7 @@
     // panel reveal: drive each panel's uReveal uniform from local proximity
     clusters.forEach(function (cl) {
       var d = Math.abs((cl.userData.project.sectionIdx) - scrollProgress);
-      // proximity 0 (right on cluster) → 1.0 reveal, 1+ → 0 reveal
+      // proximity 0 (right on cluster) в†’ 1.0 reveal, 1+ в†’ 0 reveal
       var prox = Math.max(0, 1 - d);
       var reveal = THREE.MathUtils.smoothstep(prox, 0.05, 0.6);
       // also energy for burst
@@ -810,7 +810,7 @@
   });
 
   // -----------------------------------------------------------
-  // 16. Audio — WebAudio synthesized ambient drone (no network)
+  // 16. Audio вЂ” WebAudio synthesized ambient drone (no network)
   // -----------------------------------------------------------
   var audioCtx = null;
   var masterGain = null;
@@ -898,7 +898,7 @@
   });
 
   // -----------------------------------------------------------
-  // 17. Boot → Enter
+  // 17. Boot в†’ Enter
   // -----------------------------------------------------------
   enterBtn.addEventListener('click', function () {
     enterBtn.disabled = true;
@@ -950,130 +950,324 @@
   });
 
   // -----------------------------------------------------------
-  // 20. PROJECT GALLERY (click-to-zoom into scrollable feed)
+  // 20. PROJECT GALLERY вЂ” 3D orbit scene with procedural tree
   // -----------------------------------------------------------
   var GALLERY_DATA = {
     ticketing: {
       eyebrowNum: '/ 01',
       title: 'Event Ticketing & QR Access',
-      sub: 'Full-cycle ticketing platform: QR generation, scanner-safe access, admin control, search, analytics and live maps — configured for 75 club locations across 22 countries.',
-      meta: [['75','Club locations'],['22','Countries'],['E2E','Full-stack']],
+      sub: 'Full-cycle platform вЂ” QR generation, scanner-safe access, admin control, analytics and live maps. 75 clubs, 22 countries.',
+      meta: [['75','Clubs'],['22','Countries'],['E2E','Full-stack']],
       shots: [
-        ['ticketing-dashboard.jpg','01 / OPERATIONS','Operations dashboard','Top-level view of issuance, scanner load, anomalies and venue health.'],
-        ['ticketing-analytics-overview.jpg','02 / ANALYTICS','Analytics overview','Cross-venue rollups, conversion funnels, time-of-day patterns and aggregates.'],
-        ['ticketing-charts.jpg','03 / CHARTS','Detailed charts','Per-event series — entries, scans, no-shows — with comparable baselines.'],
-        ['ticketing-map.jpg','04 / GEO LAYER','Live geographic map','Country and city distribution; quick context switching across markets.'],
-        ['ticketing-search.jpg','05 / SEARCH','Cross-event search','Find a specific guest, ticket or order across the entire venue network.'],
-        ['ticketing-segmentation.jpg','06 / SEGMENTS','Segmentation slice','Filter and group by audience traits to inform marketing decisions.'],
-        ['scanner.jpg','07 / SCANNER','Scanner-side surface','Door-side scan UX — isolated from backoffice so it never blocks entry.']
+        { file: 'ticketing-dashboard.jpg',         tag: '01 / OPERATIONS', title: 'Operations dashboard',  desc: 'Top-level view of issuance, scanner load, anomalies and venue health.' },
+        { file: 'ticketing-analytics-overview.jpg', tag: '02 / ANALYTICS',  title: 'Analytics overview',   desc: 'Cross-venue rollups, conversion funnels, time-of-day patterns.' },
+        { file: 'ticketing-charts.jpg',             tag: '03 / CHARTS',     title: 'Detailed charts',      desc: 'Per-event series вЂ” entries, scans, no-shows вЂ” with comparable baselines.' },
+        { file: 'ticketing-map.jpg',                tag: '04 / GEO LAYER',  title: 'Live geographic map',  desc: 'Country and city distribution; quick context switching across markets.' },
+        { file: 'ticketing-search.jpg',             tag: '05 / SEARCH',     title: 'Cross-event search',   desc: 'Find any guest, ticket or order across the entire venue network.' },
+        { file: 'ticketing-segmentation.jpg',       tag: '06 / SEGMENTS',   title: 'Segmentation',         desc: 'Filter and group by audience traits to inform marketing decisions.' },
+        { file: 'scanner.jpg',                      tag: '07 / SCANNER',    title: 'Scanner surface',      desc: 'Door-side scan UX вЂ” isolated from backoffice so it never blocks entry.' }
       ]
     },
     taskcontrol: {
       eyebrowNum: '/ 02',
       title: 'Task Control & Team Ops',
-      sub: 'Operational layer for recurring event work — roles, tasks, archives and synced state across mobile and desktop.',
-      meta: [['5+','Role layers'],['∞','Recurring events'],['1','Unified ops']],
+      sub: 'Operational layer for recurring event work вЂ” roles, tasks, archives and synced state across mobile and desktop.',
+      meta: [['5+','Role layers'],['в€ћ','Events'],['1','Unified ops']],
       shots: [
-        ['task-control-dashboard.jpg','01 / OVERVIEW','Operations dashboard','Daily situational view: load, status, attention and outliers.'],
-        ['task-control-events-board.jpg','02 / EVENTS','Events board','Active and upcoming events with state, ownership and progress.'],
-        ['task-control-tasks.jpg','03 / TASKS','Task pipeline','Concrete deliverables — assignment, deadline, status, notes.'],
-        ['task-control-events-list.jpg','04 / EVENT LIST','Event list view','Searchable directory with filters by venue, type and time.'],
-        ['task-control-users.jpg','05 / ROLES','Team & roles','User registry — roles, scopes, access boundaries.'],
-        ['task-control-archive.jpg','06 / ARCHIVE','Archive view','Historic event data — searchable, exportable, audit-friendly.'],
-        ['task-control-bot-settings.jpg','07 / AUTOMATION','Bot & sync settings','Notification rules, automation triggers, sync targets.']
+        { file: 'task-control-dashboard.jpg',    tag: '01 / OVERVIEW',    title: 'Operations dashboard', desc: 'Daily situational view: load, status, attention and outliers.' },
+        { file: 'task-control-events-board.jpg', tag: '02 / EVENTS',      title: 'Events board',         desc: 'Active and upcoming events with state, ownership and progress.' },
+        { file: 'task-control-tasks.jpg',        tag: '03 / TASKS',       title: 'Task pipeline',        desc: 'Concrete deliverables вЂ” assignment, deadline, status, notes.' },
+        { file: 'task-control-events-list.jpg',  tag: '04 / EVENT LIST',  title: 'Event list',           desc: 'Searchable directory with filters by venue, type and time.' },
+        { file: 'task-control-users.jpg',        tag: '05 / ROLES',       title: 'Team & roles',         desc: 'User registry вЂ” roles, scopes, access boundaries.' },
+        { file: 'task-control-archive.jpg',      tag: '06 / ARCHIVE',     title: 'Archive view',         desc: 'Historic event data вЂ” searchable, exportable, audit-friendly.' },
+        { file: 'task-control-bot-settings.jpg', tag: '07 / AUTOMATION',  title: 'Bot settings',         desc: 'Notification rules, automation triggers, sync targets.' }
       ]
     },
     aivoice: {
       eyebrowNum: '/ 03',
       title: 'AI Voice Auto-Responder',
-      sub: 'Inbound voice automation handled as a product flow — parser, cached venue state, business rules and operator fallbacks.',
+      sub: 'Inbound voice automation вЂ” parser + cached venue state + business rules + operator fallbacks, live 24/7.',
       meta: [['24/7','Answering'],['~1s','Cache hit'],['Live','Venue sync']],
-      shots: []
+      shots: [
+        { label: 'VOICE\nPARSER',    tag: '01 / PARSER',    title: 'Natural language parser',  desc: 'Intent detection and entity extraction from inbound call transcripts in real time.' },
+        { label: 'VENUE\nCACHE',     tag: '02 / CACHE',     title: 'Venue cache layer',        desc: 'Events, capacity and schedule pre-loaded so answers are grounded in current state.' },
+        { label: 'BUSINESS\nRULES',  tag: '03 / RULES',     title: 'Rules engine',             desc: 'Configurable matrix: closed venues, sold-out events, VIP routing, special cases.' },
+        { label: 'OPERATOR\nFALLBK', tag: '04 / FALLBACK',  title: 'Operator hand-off',       desc: 'Graceful fallback when confidence is low вЂ” routes to human with full context.' },
+        { label: '24/7\nACTIVE',     tag: '05 / UPTIME',    title: '24/7 availability',        desc: 'Always-on. No shift gaps, no fatigue вЂ” handles call surges without queue saturation.' },
+        { label: 'BOOKING\nSYNC',    tag: '06 / BOOKING',   title: 'Live booking sync',        desc: 'Real-time availability checks and reservation confirmations via ticketing API.' },
+        { label: 'CALL\nANALYTICS', tag: '07 / ANALYTICS', title: 'Call analytics',           desc: 'Intent logs, resolution rate, fallback frequency вЂ” full visibility into voice traffic.' }
+      ]
     }
   };
 
-  function gImg(name) { return './assets/screens/' + name; }
-
+  // gallery 3D state
+  var galScene, galRenderer, galCamera, galRaf;
+  var galOrbitGroup, galPanels = [], galActiveIdx = 0;
+  var galTreeGroup, galParticlesObj;
+  var galDragging = false, galDragStartX = 0, galDragMoved = false, galRotVel = 0;
+  var galleryOpen = false;
+  var galLoadedTextures = [];
   var galleryEl     = document.getElementById('xp-gallery');
-  var galleryScroll = document.getElementById('xp-gallery-scroll');
   var galleryClose  = document.getElementById('xp-gallery-close');
-  var galStackEl    = document.getElementById('xp-gal-stack');
+  var galCanvas     = document.getElementById('xp-gal-canvas');
   var galTitleEl    = document.getElementById('xp-gal-title');
   var galSubEl      = document.getElementById('xp-gal-sub');
   var galMetaEl     = document.getElementById('xp-gal-meta');
   var galEbNum      = document.getElementById('xp-gal-eb-num');
   var galChip       = document.getElementById('xp-gal-chip');
+  var galFrameTag   = document.getElementById('xp-gal-frame-tag');
+  var galFrameTitle = document.getElementById('xp-gal-frame-title');
+  var galFrameDesc  = document.getElementById('xp-gal-frame-desc');
+  var galPrevBtn    = document.getElementById('xp-gal-prev');
+  var galNextBtn    = document.getElementById('xp-gal-next');
 
-  var galleryObserver = null;
-  var galleryOpen = false;
+  // --- procedural glowing tree ---
+  function buildGalTree(sc) {
+    var g = new THREE.Group();
+    var seed = 7;
+    function rnd() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 4294967295; }
+
+    function seg(a, b, r, op) {
+      var m1 = a.clone().lerp(b, 0.33).addScaledVector(new THREE.Vector3(rnd()-0.5, 0, rnd()-0.5), r * 5);
+      var m2 = a.clone().lerp(b, 0.66).addScaledVector(new THREE.Vector3(rnd()-0.5, 0, rnd()-0.5), r * 5);
+      var crv = new THREE.CatmullRomCurve3([a, m1, m2, b]);
+      var geo = new THREE.TubeGeometry(crv, 8, r, 6, false);
+      var mat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: op !== undefined ? op : Math.min(0.88, 0.15 + r * 12), blending: THREE.AdditiveBlending, depthWrite: false });
+      g.add(new THREE.Mesh(geo, mat));
+      var tg = new THREE.Mesh(new THREE.SphereGeometry(r * 2.8, 7, 7), new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+      tg.position.copy(b); g.add(tg);
+    }
+
+    function grow(start, dir, len, r, depth) {
+      if (depth < 0 || r < 0.003) return;
+      var end = start.clone().addScaledVector(dir, len);
+      seg(start, end, r);
+      var kids = depth >= 3 ? 3 : 2;
+      for (var k = 0; k < kids; k++) {
+        var nd = new THREE.Vector3(dir.x + (rnd()-0.5)*0.95, dir.y + rnd()*0.28 + 0.05, dir.z + (rnd()-0.5)*0.95).normalize();
+        grow(end, nd, len * 0.62, r * 0.58, depth - 1);
+      }
+    }
+
+    grow(new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1, 0), 0.88, 0.058, 4);
+
+    // root tendrils
+    for (var ri = 0; ri < 6; ri++) {
+      var ra = (ri / 6) * Math.PI * 2;
+      seg(new THREE.Vector3(Math.sin(ra)*0.35, -1.45, Math.cos(ra)*0.35),
+          new THREE.Vector3(Math.sin(ra)*0.70, -1.90, Math.cos(ra)*0.70), 0.013, 0.45);
+    }
+
+    // core + outer glow
+    var coreM = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthWrite: false });
+    var core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), coreM);
+    core.position.y = -1.6; g.add(core);
+    var outerM = new THREE.MeshBasicMaterial({ color: 0x6d28d9, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
+    var outer = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 14), outerM);
+    outer.position.y = -1.6; g.add(outer);
+    var topM = new THREE.MeshBasicMaterial({ color: 0x4c1d95, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
+    var topGlow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 14, 14), topM);
+    topGlow.position.y = 0.4; g.add(topGlow);
+
+    // particle cloud
+    var pCount = 700, pp = new Float32Array(pCount * 3), ps = 31337;
+    for (var pi = 0; pi < pCount; pi++) {
+      ps = (ps*1664525+1013904223)&0xffffffff; var rv = (ps>>>0)/4294967295;
+      ps = (ps*1664525+1013904223)&0xffffffff; var ph = (ps>>>0)/4294967295*Math.PI*2;
+      ps = (ps*1664525+1013904223)&0xffffffff; var th = (ps>>>0)/4294967295*Math.PI;
+      var rad = 0.3 + rv * 2.2;
+      pp[pi*3]   = rad*Math.sin(th)*Math.cos(ph);
+      pp[pi*3+1] = rad*Math.cos(th)*0.65 - 0.3;
+      pp[pi*3+2] = rad*Math.sin(th)*Math.sin(ph);
+    }
+    var pgeo = new THREE.BufferGeometry();
+    pgeo.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+    galParticlesObj = new THREE.Points(pgeo, new THREE.PointsMaterial({ color: 0x8b5cf6, size: 0.014, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+    g.add(galParticlesObj);
+    sc.add(g);
+    galTreeGroup = g;
+  }
+
+  // canvas texture for AI Voice node cards
+  function makeNodeTex(label) {
+    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 320;
+    var cx = cv.getContext('2d');
+    var bg = cx.createLinearGradient(0, 0, 512, 320);
+    bg.addColorStop(0, '#0e0a1a'); bg.addColorStop(1, '#07090f');
+    cx.fillStyle = bg; cx.fillRect(0, 0, 512, 320);
+    var rg = cx.createRadialGradient(256, 160, 0, 256, 160, 230);
+    rg.addColorStop(0, 'rgba(167,139,250,0.22)'); rg.addColorStop(1, 'transparent');
+    cx.fillStyle = rg; cx.fillRect(0, 0, 512, 320);
+    cx.strokeStyle = 'rgba(167,139,250,0.5)'; cx.lineWidth = 1.5;
+    cx.strokeRect(3, 3, 506, 314);
+    [[12,12,1,1],[500,12,-1,1],[12,308,1,-1],[500,308,-1,-1]].forEach(function(q) {
+      cx.beginPath(); cx.moveTo(q[0]+q[2]*20,q[1]); cx.lineTo(q[0],q[1]); cx.lineTo(q[0],q[1]+q[3]*20); cx.stroke();
+    });
+    cx.fillStyle = '#ddd6fe'; cx.font = 'bold 56px monospace'; cx.textAlign = 'center';
+    var lines = label.split('\n'), sy = 180 - (lines.length-1)*34;
+    lines.forEach(function(ln, i) { cx.fillText(ln, 256, sy + i*72); });
+    cx.strokeStyle = 'rgba(255,255,255,0.025)'; cx.lineWidth = 1;
+    for (var y = 0; y < 320; y += 4) { cx.beginPath(); cx.moveTo(0,y); cx.lineTo(512,y); cx.stroke(); }
+    var t = new THREE.CanvasTexture(cv); t.flipY = true; return t;
+  }
+
+  // build orbit ring
+  function buildGalOrbit(sc, shots, textures) {
+    var og = new THREE.Group();
+    og.rotation.x = -0.12;
+    var n = shots.length, radius = 2.65;
+    shots.forEach(function(s, i) {
+      var angle = (i / n) * Math.PI * 2;
+      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false });
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 1.075), mat);
+      mesh.position.set(Math.sin(angle)*radius, 0, Math.cos(angle)*radius);
+      mesh.lookAt(0, 0, 0);
+      // edge glow
+      var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 1.22), gm);
+      gmesh.position.z = 0.025; mesh.add(gmesh);
+      mesh.userData.glowMat = gm;
+      mesh.userData.shotIdx = i;
+      mesh.userData.shotData = s;
+      og.add(mesh);
+    });
+    sc.add(og);
+    galOrbitGroup = og;
+    galPanels = og.children.slice();
+  }
+
+  function setGalActive(idx) {
+    if (idx === galActiveIdx && galFrameTag && galFrameTag.textContent) return;
+    galActiveIdx = idx;
+    var n = galPanels.length;
+    var s = galPanels[idx] && galPanels[idx].userData.shotData;
+    if (s) {
+      if (galFrameTag)   galFrameTag.textContent   = s.tag   || '';
+      if (galFrameTitle) galFrameTitle.textContent = s.title || '';
+      if (galFrameDesc)  galFrameDesc.textContent  = s.desc  || '';
+    }
+    if (galChip) galChip.textContent = String(idx+1).padStart(2,'0') + ' / ' + String(n).padStart(2,'0');
+  }
+
+  var galRaycaster = new THREE.Raycaster();
+
+  function galTick() {
+    if (!galScene || !galRenderer) return;
+    galRaf = requestAnimationFrame(galTick);
+    var w = Math.max(1, galCanvas.clientWidth), h = Math.max(1, galCanvas.clientHeight);
+    if (galRenderer.domElement.width !== w || galRenderer.domElement.height !== h) {
+      galRenderer.setSize(w, h, false);
+      galCamera.aspect = w / h;
+      galCamera.updateProjectionMatrix();
+    }
+    if (galTreeGroup) {
+      galTreeGroup.rotation.y += 0.0015;
+      if (galParticlesObj) galParticlesObj.rotation.y -= 0.0018;
+    }
+    if (galOrbitGroup) {
+      if (!galDragging) {
+        galRotVel *= 0.93;
+        galOrbitGroup.rotation.y += galRotVel + 0.0025;
+      } else {
+        galOrbitGroup.rotation.y += galRotVel;
+        galRotVel *= 0.88;
+      }
+      var n = galPanels.length;
+      if (n > 0) {
+        var ry = galOrbitGroup.rotation.y;
+        var best = 0, bestCos = -Infinity;
+        for (var pi = 0; pi < n; pi++) {
+          var cv = Math.cos((pi/n)*Math.PI*2 + ry);
+          if (cv > bestCos) { bestCos = cv; best = pi; }
+        }
+        setGalActive(best);
+        galPanels.forEach(function(p, i) {
+          var act = (i === galActiveIdx);
+          var ts = act ? 1.18 : 0.72, to = act ? 1.0 : 0.28;
+          p.scale.x += (ts - p.scale.x) * 0.09;
+          p.scale.y += (ts - p.scale.y) * 0.09;
+          if (p.material) p.material.opacity += (to - p.material.opacity) * 0.09;
+          if (p.userData.glowMat) { var tg = act ? 0.30 : 0; p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.09; }
+        });
+      }
+    }
+    galRenderer.render(galScene, galCamera);
+  }
 
   function openGallery(projectKey) {
     var data = GALLERY_DATA[projectKey];
-    if (!data || galleryOpen || !galleryEl) return;
+    if (!data || galleryOpen || !galleryEl || !galCanvas) return;
     galleryOpen = true;
-
     if (galEbNum)   galEbNum.textContent   = data.eyebrowNum;
     if (galTitleEl) galTitleEl.textContent = data.title;
     if (galSubEl)   galSubEl.textContent   = data.sub;
-
     if (galMetaEl) {
       galMetaEl.innerHTML = '';
-      data.meta.forEach(function (m) {
+      data.meta.forEach(function(m) {
         var c = document.createElement('div'); c.className = 'xp-gal-meta-cell';
-        var n = document.createElement('span'); n.className = 'xp-meta-num'; n.textContent = m[0];
-        var l = document.createElement('span'); l.className = 'xp-meta-lbl'; l.textContent = m[1];
-        c.appendChild(n); c.appendChild(l); galMetaEl.appendChild(c);
+        c.innerHTML = '<span class="xp-meta-num">' + m[0] + '</span><span class="xp-meta-lbl">' + m[1] + '</span>';
+        galMetaEl.appendChild(c);
       });
     }
-
-    galStackEl.innerHTML = '';
-    if (data.shots.length === 0) {
-      var note = document.createElement('div');
-      note.className = 'xp-gal-fig';
-      note.innerHTML = '<div class="xp-gal-fig-frame" style="padding:80px 60px;text-align:center;"><h3 style="font-family:var(--xp-sans);font-weight:300;font-size:clamp(28px,4vw,42px);color:var(--xp-fg);margin:0 0 18px;">Voice-first surface</h3><p style="color:var(--xp-fg-dim);max-width:62ch;margin:0 auto;line-height:1.7;">Visual proofs for this build are intentionally minimal — value lives in the call flow, business rules and fallback chain. Audio walkthrough available on request.</p></div>';
-      galStackEl.appendChild(note);
-    } else {
-      data.shots.forEach(function (s, idx) {
-        var fig = document.createElement('figure');
-        fig.className = 'xp-gal-fig';
-        fig.style.transitionDelay = (Math.min(idx, 6) * 0.04) + 's';
-        fig.innerHTML =
-          '<div class="xp-gal-fig-frame">' +
-            '<span class="xp-c xp-c-tl"></span>' +
-            '<span class="xp-c xp-c-tr"></span>' +
-            '<span class="xp-c xp-c-bl"></span>' +
-            '<span class="xp-c xp-c-br"></span>' +
-            '<img loading="lazy" src="' + gImg(s[0]) + '" alt="' + s[2] + '">' +
-          '</div>' +
-          '<figcaption class="xp-gal-fig-cap">' +
-            '<span class="xp-gal-fig-num">' + s[1] + '</span>' +
-            '<div class="xp-gal-fig-body"><h3>' + s[2] + '</h3><p>' + s[3] + '</p></div>' +
-          '</figcaption>';
-        galStackEl.appendChild(fig);
-      });
-    }
-
-    if (galChip) galChip.textContent = 'FRAME 00 / ' + String(data.shots.length || 1).padStart(2, '0');
-
     galleryEl.classList.add('is-open');
     galleryEl.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    if (galleryScroll) galleryScroll.scrollTop = 0;
-
-    if (galleryObserver) galleryObserver.disconnect();
-    galleryObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) {
-          e.target.classList.add('is-in');
-          var idx = Array.prototype.indexOf.call(galStackEl.children, e.target) + 1;
-          var total = galStackEl.children.length;
-          if (galChip) galChip.textContent = 'FRAME ' + String(idx).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
-        }
-      });
-    }, { root: galleryScroll, threshold: 0.18, rootMargin: '-10% 0px -10% 0px' });
-    Array.prototype.forEach.call(galStackEl.children, function (c) { galleryObserver.observe(c); });
-
+    var w = window.innerWidth, h = window.innerHeight;
+    galScene = new THREE.Scene();
+    galCamera = new THREE.PerspectiveCamera(46, w/h, 0.1, 100);
+    galCamera.position.set(0, 0.4, 6.5);
+    galCamera.lookAt(0, 0, 0);
+    galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
+    galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    galRenderer.setSize(w, h, false);
+    galRenderer.setClearColor(0x000000, 0);
+    galScene.fog = new THREE.FogExp2(0x03040a, 0.055);
+    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.4));
+    var pl = new THREE.PointLight(0x7c3aed, 2.5, 10);
+    pl.position.set(0, 1.5, 3.5); galScene.add(pl);
+    galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
+    buildGalTree(galScene);
+    var shots = data.shots, pending = shots.length;
+    function afterLoad() {
+      buildGalOrbit(galScene, shots, galLoadedTextures);
+      setGalActive(0);
+      requestAnimationFrame(galTick);
+    }
+    if (pending === 0) { afterLoad(); return; }
+    var tld = new THREE.TextureLoader();
+    shots.forEach(function(s, i) {
+      if (s.label) {
+        galLoadedTextures[i] = makeNodeTex(s.label);
+        if (--pending <= 0) afterLoad();
+      } else {
+        tld.load('./assets/screens/' + s.file, function(tex) {
+          tex.flipY = true; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+          galLoadedTextures[i] = tex;
+          if (--pending <= 0) afterLoad();
+        }, undefined, function() {
+          galLoadedTextures[i] = makeNodeTex('NO\nIMAGE');
+          if (--pending <= 0) afterLoad();
+        });
+      }
+    });
+    galCanvas.addEventListener('mousedown', onGMD);
+    galCanvas.addEventListener('mousemove', onGMM);
+    galCanvas.addEventListener('mouseup',   onGMU);
+    galCanvas.addEventListener('mouseleave',onGMU);
+    galCanvas.addEventListener('click',     onGC);
+    galCanvas.addEventListener('touchstart', onGTS, { passive: true });
+    galCanvas.addEventListener('touchmove',  onGTM, { passive: true });
+    galCanvas.addEventListener('touchend',   onGTE);
+    window.addEventListener('resize', onGalResize);
     if (typeof fadeAudio === 'function') fadeAudio(0.18, 0.8);
+  }
+
+  function onGalResize() {
+    if (!galRenderer) return;
+    var w = window.innerWidth, h = window.innerHeight;
+    galRenderer.setSize(w, h, false);
+    galCamera.aspect = w / h;
+    galCamera.updateProjectionMatrix();
   }
 
   function closeGallery() {
@@ -1082,63 +1276,86 @@
     galleryEl.classList.remove('is-open');
     galleryEl.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-    if (galleryObserver) { galleryObserver.disconnect(); galleryObserver = null; }
+    cancelAnimationFrame(galRaf);
+    if (galRenderer) { galRenderer.dispose(); galRenderer = null; }
+    galLoadedTextures.forEach(function(t) { if (t && t.dispose) t.dispose(); });
+    galLoadedTextures = []; galPanels = []; galScene = null;
+    galCanvas.removeEventListener('mousedown', onGMD);
+    galCanvas.removeEventListener('mousemove', onGMM);
+    galCanvas.removeEventListener('mouseup',   onGMU);
+    galCanvas.removeEventListener('mouseleave',onGMU);
+    galCanvas.removeEventListener('click',     onGC);
+    galCanvas.removeEventListener('touchstart', onGTS);
+    galCanvas.removeEventListener('touchmove',  onGTM);
+    galCanvas.removeEventListener('touchend',   onGTE);
+    window.removeEventListener('resize', onGalResize);
     if (typeof fadeAudio === 'function' && !audioMuted) fadeAudio(0.35, 1.0);
   }
 
-  if (galleryClose) galleryClose.addEventListener('click', closeGallery);
-  window.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && galleryOpen) { closeGallery(); e.stopImmediatePropagation(); }
-  });
-
-  // -----------------------------------------------------------
-  // 21. RAYCASTER — click 3D panel to open its gallery
-  // -----------------------------------------------------------
-  var raycaster = new THREE.Raycaster();
-  var ndc = new THREE.Vector2();
-
-  function panelUnderPointer(e) {
-    var rect = renderer.domElement.getBoundingClientRect();
-    ndc.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-    ndc.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-    raycaster.setFromCamera(ndc, camera);
-    var meshes = [];
-    clusters.forEach(function (cl) {
-      if (cl.userData.panels) cl.userData.panels.forEach(function (p) { if (p) meshes.push(p); });
-    });
-    var hits = raycaster.intersectObjects(meshes, false);
-    for (var i = 0; i < hits.length; i++) {
-      var m = hits[i].object;
-      var mat = m.userData.panelMat;
-      if (mat && mat.uniforms.uOpacity.value > 0.25) return m;
+  function onGMD(e) { galDragging = true; galDragStartX = e.clientX; galDragMoved = false; galRotVel = 0; }
+  function onGMM(e) {
+    if (!galDragging) return;
+    var dx = e.clientX - galDragStartX;
+    if (Math.abs(dx) > 3) galDragMoved = true;
+    galRotVel = dx * 0.004;
+    galDragStartX = e.clientX;
+    if (galOrbitGroup) galOrbitGroup.rotation.y += galRotVel;
+  }
+  function onGMU() { galDragging = false; }
+  var galTouchX = 0;
+  function onGTS(e) { galDragging = true; galTouchX = e.touches[0].clientX; galDragMoved = false; galRotVel = 0; }
+  function onGTM(e) {
+    if (!galDragging) return;
+    var dx = e.touches[0].clientX - galTouchX;
+    if (Math.abs(dx) > 5) galDragMoved = true;
+    galRotVel = dx * 0.004; galTouchX = e.touches[0].clientX;
+    if (galOrbitGroup) galOrbitGroup.rotation.y += galRotVel;
+  }
+  function onGTE() { galDragging = false; }
+  function onGC(e) {
+    if (galDragMoved || !galOrbitGroup || !galCamera) return;
+    galRaycaster.setFromCamera(new THREE.Vector2((e.clientX/galCanvas.clientWidth)*2-1, -((e.clientY/galCanvas.clientHeight)*2-1)), galCamera);
+    var hits = galRaycaster.intersectObjects(galPanels, false);
+    if (hits.length && hits[0].object.userData.shotIdx !== undefined) {
+      var idx = hits[0].object.userData.shotIdx, n = galPanels.length;
+      var diff = idx - galActiveIdx;
+      if (diff > n/2) diff -= n; if (diff < -n/2) diff += n;
+      galRotVel = 0;
+      galOrbitGroup.rotation.y -= (diff/n)*Math.PI*2;
     }
-    return null;
   }
 
-  renderer.domElement.style.pointerEvents = 'auto';
-  renderer.domElement.addEventListener('mousemove', function (e) {
-    if (galleryOpen) return;
-    var m = panelUnderPointer(e);
-    document.body.classList.toggle('is-hover-panel', !!m);
+  if (galleryClose) galleryClose.addEventListener('click', closeGallery);
+  window.addEventListener('keydown', function(e) {
+    if (!galleryOpen) return;
+    if (e.key === 'Escape') { closeGallery(); e.stopImmediatePropagation(); return; }
+    if (!galOrbitGroup || galPanels.length < 2) return;
+    var n = galPanels.length;
+    if (e.key === 'ArrowRight') { galOrbitGroup.rotation.y -= (1/n)*Math.PI*2; galRotVel = 0; }
+    if (e.key === 'ArrowLeft')  { galOrbitGroup.rotation.y += (1/n)*Math.PI*2; galRotVel = 0; }
   });
-  renderer.domElement.addEventListener('click', function (e) {
-    if (galleryOpen) return;
-    var m = panelUnderPointer(e);
-    if (m && m.userData.projectKey) openGallery(m.userData.projectKey);
+  if (galPrevBtn) galPrevBtn.addEventListener('click', function() {
+    if (galOrbitGroup && galPanels.length > 1) { galOrbitGroup.rotation.y += (1/galPanels.length)*Math.PI*2; galRotVel = 0; }
+  });
+  if (galNextBtn) galNextBtn.addEventListener('click', function() {
+    if (galOrbitGroup && galPanels.length > 1) { galOrbitGroup.rotation.y -= (1/galPanels.length)*Math.PI*2; galRotVel = 0; }
   });
 
-  // headings also open gallery
+  // -----------------------------------------------------------
+  // 21. GALLERY TRIGGERS вЂ” buttons & heading clicks
+  // -----------------------------------------------------------
   var SEC_TO_KEY = { 1: 'ticketing', 2: 'taskcontrol', 3: 'aivoice' };
-  document.querySelectorAll('.xp-proj-h2').forEach(function (h) {
+  document.querySelectorAll('.xp-gal-trigger[data-sec]').forEach(function(btn) {
+    var key = SEC_TO_KEY[parseInt(btn.getAttribute('data-sec'), 10)];
+    if (key) btn.addEventListener('click', function() { openGallery(key); });
+  });
+  document.querySelectorAll('.xp-proj-h2').forEach(function(h) {
     var secEl = h.closest('.xp-sec');
-    var sec = secEl ? parseInt(secEl.getAttribute('data-sec'), 10) : -1;
-    var key = SEC_TO_KEY[sec];
+    var key = SEC_TO_KEY[secEl ? parseInt(secEl.getAttribute('data-sec'), 10) : -1];
     if (!key) return;
     h.style.cursor = 'pointer';
-    h.setAttribute('role', 'button');
     h.setAttribute('tabindex', '0');
-    h.addEventListener('click', function () { openGallery(key); });
-    h.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openGallery(key); } });
+    h.addEventListener('click', function() { openGallery(key); });
   });
 
   // -----------------------------------------------------------
