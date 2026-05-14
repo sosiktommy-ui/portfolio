@@ -1319,40 +1319,57 @@
     return t;
   }
 
-  // build RING of cards orbiting around the tree
+  // SPIRAL of photos descending around the tree-trunk axis.
+  // Camera is fixed; as user scrolls, the spiral (and tree) rises + counter-rotates
+  // so the next photo always lands DIRECTLY in front of the camera, framed for viewing.
   var galStepProg = 1;
   var galTargetProg = 0;
   var galProg = 0;
   var galMaxProg = 0;
-  var galRingRadius = 3.6;     // distance from tree center
-  var galViewSlot = new THREE.Vector3(2.0, 0.5, 2.6); // active card pulled out toward camera/right
+  var galSpiralRadius = 2.95;             // distance from trunk
+  var galSpiralYStep  = 2.05;             // vertical gap between consecutive photos
+  var galSpiralAngStep = 100 * Math.PI / 180; // angular gap (~100°)
+  var galSpiralStartAng = Math.PI / 2;    // photo #0 sits on +Z (toward camera) when galProg=0
   // legacy holdovers
   var galHelixStep = 1;
   var galHelixRadius = 0;
   var galTargetY = 0;
   var galCameraY = 0;
   var galMaxScroll = 0;
+  var galRingRadius = 0;
+  var galViewSlot = new THREE.Vector3(0, 0, 0);
   function buildGalOrbit(sc, shots, textures) {
     var og = new THREE.Group();
     var n = shots.length;
     galMaxProg = n - 1;
     shots.forEach(function(s, i) {
+      var theta = galSpiralStartAng + i * galSpiralAngStep;
+      var x = Math.cos(theta) * galSpiralRadius;
+      var z = Math.sin(theta) * galSpiralRadius;
+      var y = -i * galSpiralYStep;
       var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), mat);
-      var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(2.65, 1.74), gm);
-      gmesh.position.z = -0.015;
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.9), mat);
+      // soft outer glow
+      var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(3.32, 2.18), gm);
+      gmesh.position.z = -0.018;
       mesh.add(gmesh);
-      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.42, 1.52));
+      // thin frame
+      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(3.02, 1.92));
       var frameMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0 });
       var frame = new THREE.LineSegments(frameGeo, frameMat);
-      frame.position.z = 0.005;
+      frame.position.z = 0.006;
       mesh.add(frame);
+      mesh.position.set(x, y, z);
+      // orient so photo's front faces OUTWARD from trunk; when group counter-rotates
+      // to bring photo #i to angle π/2, its normal lines up with +Z toward camera.
+      mesh.rotation.y = -theta + Math.PI / 2;
       mesh.userData.glowMat = gm;
       mesh.userData.frameMat = frameMat;
       mesh.userData.shotIdx = i;
       mesh.userData.shotData = s;
-      mesh.userData.baseAngle = (i / n) * Math.PI * 2;
+      mesh.userData.baseY = y;
+      mesh.userData.baseTheta = theta;
       og.add(mesh);
     });
     sc.add(og);
@@ -1385,82 +1402,48 @@
       galCamera.updateProjectionMatrix();
     }
     galProg += (galTargetProg - galProg) * 0.085;
-    // camera fixed — offset to LEFT so tree stays center-left, viewing slot on the right
+    // camera fixed — looking straight at the spiral axis
     if (galCamera) {
-      galCamera.position.set(-1.4, 1.0, 6.4);
-      galCamera.lookAt(0.6, 0.2, 0);
+      galCamera.position.set(0, 0.4, 8.0);
+      galCamera.lookAt(0, 0, 0);
     }
-    // tree gently sways with scroll
+    // lift + counter-rotate the entire spiral so photo #round(galProg)
+    // ends up exactly in front of camera at (0,0,R).
+    if (galOrbitGroup) {
+      var ty = galProg * galSpiralYStep;
+      var tr = -galProg * galSpiralAngStep;
+      galOrbitGroup.position.y += (ty - galOrbitGroup.position.y) * 0.12;
+      galOrbitGroup.rotation.y += (tr - galOrbitGroup.rotation.y) * 0.12;
+    }
+    // tree as the axis — moves with mild parallax, rotates softer than the spiral
     if (galTreeGroup) {
-      galTreeGroup.rotation.y = galProg * 0.18;
-      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.10;
+      var tty = galProg * galSpiralYStep * 0.45;
+      var ttr = -galProg * galSpiralAngStep * 0.35;
+      galTreeGroup.position.y += (tty + (-1.5) - galTreeGroup.position.y) * 0.10;
+      galTreeGroup.rotation.y += (ttr - galTreeGroup.rotation.y) * 0.10;
+      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.15;
     }
-    // arrange cards on a ring around tree; rotate ring so active card swings into front slot
+    // per-photo focus/fade based on distance from active index
     var n = galPanels.length;
     if (n > 0) {
       var active = Math.round(galProg);
       if (active < 0) active = 0; if (active > n-1) active = n-1;
       setGalActive(active);
-      var slotAngle = 0;            // angle 0 = +X side (front-right of tree)
-      var step = (Math.PI * 2) / n;
       for (var pi = 0; pi < n; pi++) {
         var p = galPanels[pi];
-        // current angle relative to slot
-        var rel = pi - galProg;
-        // wrap to nearest path
-        while (rel >  n/2) rel -= n;
-        while (rel < -n/2) rel += n;
-        var ang = slotAngle + rel * step;
-        // ring position
-        var rx = Math.cos(ang) * galRingRadius;
-        var rz = Math.sin(ang) * galRingRadius;
-        var ry = 0.5 + Math.sin(rel * 0.7) * 0.15;
-        // proximity to slot (0 = active)
-        var ar = Math.abs(rel);
-        // when active, pull OUT of ring toward viewing slot
-        var pullT = Math.max(0, 1 - ar * 1.4); // 1 at active, 0 by ~0.7 away
-        var tx = rx + (galViewSlot.x - rx) * pullT;
-        var ty = ry + (galViewSlot.y - ry) * pullT;
-        var tz = rz + (galViewSlot.z - rz) * pullT;
-        // facing
-        var faceTargetX, faceTargetZ;
-        if (pullT > 0.5) {
-          // active card faces camera
-          faceTargetX = galCamera.position.x;
-          faceTargetZ = galCamera.position.z;
-        } else {
-          // non-active faces tree center (so back is to outside)
-          faceTargetX = 0;
-          faceTargetZ = 0;
-        }
-        // lerp position
-        p.position.x += (tx - p.position.x) * 0.09;
-        p.position.y += (ty - p.position.y) * 0.09;
-        p.position.z += (tz - p.position.z) * 0.09;
-        // compute target yaw to face target
-        var dx = faceTargetX - p.position.x;
-        var dz = faceTargetZ - p.position.z;
-        var tyaw = Math.atan2(dx, dz);
-        // lerp yaw shortest way
-        var curYaw = p.rotation.y;
-        var diff = tyaw - curYaw;
-        while (diff >  Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        p.rotation.y += diff * 0.10;
-        // scale & opacity
-        var ts = 0.7 + pullT * 0.45;
+        var d = pi - galProg;
+        var ad = Math.abs(d);
+        var focus = Math.max(0, 1 - ad * 0.85);          // 1 at active, 0 by ~1.2 away
+        var ts  = 0.82 + focus * 0.23;                    // active = ~1.05
+        var top = ad < 0.5 ? 1.0 : Math.max(0.16, 1 - ad * 0.42);
+        var tgl = focus > 0.5 ? (focus - 0.5) * 0.7 : 0;
+        var tfr = 0.25 + focus * 0.65;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
-        var top = 0.25 + pullT * 0.75;
-        // hide cards on the FAR side of the ring (behind tree from camera) more aggressively
-        if (rz < -1.5 && pullT < 0.3) top *= 0.35;
         if (p.material)          p.material.opacity          += (top - p.material.opacity) * 0.10;
-        if (p.userData.frameMat) p.userData.frameMat.opacity += (top * 0.7 - p.userData.frameMat.opacity) * 0.10;
-        if (p.userData.glowMat) {
-          var tg = pullT > 0.6 ? 0.30 * (pullT - 0.6) / 0.4 : 0;
-          p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.10;
-        }
-        p.renderOrder = pullT * 10 + (5 - rz);
+        if (p.userData.frameMat) p.userData.frameMat.opacity += (tfr - p.userData.frameMat.opacity) * 0.10;
+        if (p.userData.glowMat)  p.userData.glowMat.opacity  += (tgl - p.userData.glowMat.opacity) * 0.10;
+        p.renderOrder = 10 - ad * ad;
       }
     }
     galRenderer.render(galScene, galCamera);
@@ -1486,10 +1469,10 @@
     document.body.style.overflow = 'hidden';
     var w = window.innerWidth, h = window.innerHeight;
     galScene = new THREE.Scene();
-    galCamera = new THREE.PerspectiveCamera(48, w/h, 0.1, 200);
+    galCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 200);
     galTargetProg = 0; galProg = 0;
-    galCamera.position.set(-1.4, 1.0, 6.4);
-    galCamera.lookAt(0.6, 0.2, 0);
+    galCamera.position.set(0, 0.4, 8.0);
+    galCamera.lookAt(0, 0, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
@@ -1559,10 +1542,10 @@
 
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     buildGalTree(galScene);
-    // tree stays BIG and centered — the showpiece
+    // tree is the SPIRAL AXIS — big, centered, crown near top of view, trunk descends
     if (galTreeGroup) {
-      galTreeGroup.position.set(0, 0, 0);
-      galTreeGroup.scale.set(1.15, 1.15, 1.15);
+      galTreeGroup.position.set(0, -1.5, 0);
+      galTreeGroup.scale.set(1.25, 1.25, 1.25);
     }
     var shots = data.shots, pending = shots.length;
     function afterLoad() {
