@@ -1383,7 +1383,7 @@
     // HELIX / SPIRAL — each photo descends AND rotates around the column
     var spiralR        = 3.8;
     var spiralAngStep  = (Math.PI * 2) / 3.0;   // 120 deg apart — exactly 3 per turn
-    var spiralYStep    = 0.60;                   // 0.6 units lower per photo (tight helix)
+    var spiralYStep    = 0.85;                   // vertical spacing per photo — clear staircase
     var spiralStartY   = 1.2;
     shots.forEach(function(s, i) {
       var theta = i * spiralAngStep;
@@ -1484,7 +1484,7 @@
     // Each photo scroll step = 120deg rotation + descent (like Secret Sky / helix fly-through)
     // helix params MUST match buildGalOrbit
     var spiralAngStep = (Math.PI * 2) / 3.0;   // 120 deg per photo
-    var spiralYStep   = 0.60;
+    var spiralYStep   = 0.85;                   // MUST match buildGalOrbit
     var spiralStartY  = 1.2;
     var activeIdxF = Math.max(0, Math.min(n > 0 ? n - 1 : 0, galProg));
     var activePhotoY  = spiralStartY - activeIdxF * spiralYStep;
@@ -1564,13 +1564,19 @@
         tmp.position.copy(p.position);
         tmp.lookAt(camPos);
         p.quaternion.slerp(tmp.quaternion, 0.09);
-        // scale — active bigger, far ones smaller but still visible
+        // side-visibility: photos on the FAR side of the column (opposite camera) are hidden
+        // cos(theta - camAng): +1 = same side as cam, -1 = directly behind column
+        var sideCos = Math.cos(theta - galCamAng);
+        // sideFactor: 0 when behind, 1 when in front — sharp cutoff near the column edge
+        var sideFactor = Math.max(0, Math.min(1, (sideCos + 0.25) / 0.65));
+        // scale — active bigger, far ones smaller
         var ts  = 0.65 + focus * 0.45;   // 0.65 (far) .. 1.10 (active)
-        // photo opacity — keep distant ones visible so you can see the helix
-        var top = Math.max(0.30, 0.92 - ad * 0.22);
-        var tgl = focus > 0.3 ? (focus - 0.3) * 0.55 : 0;
-        var tfr = 0.18 + focus * 0.82;
-        var tbz = 0.35 + focus * 0.55;
+        // photo opacity: distance-based * side-visibility (0 when behind column)
+        var distOp = Math.max(0, 0.92 - ad * 0.28);
+        var top = distOp * sideFactor;
+        var tgl = focus > 0.3 ? (focus - 0.3) * 0.55 * sideFactor : 0;
+        var tfr = (0.18 + focus * 0.82) * sideFactor;
+        var tbz = (0.35 + focus * 0.55) * sideFactor;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
         p.scale.z += (ts - p.scale.z) * 0.10;
