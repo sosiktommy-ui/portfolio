@@ -1367,17 +1367,16 @@
     var og = new THREE.Group();
     var n = shots.length;
     galMaxProg = n - 1;
-    // distribute photos evenly across both tiers
+    // HELIX / SPIRAL — each photo descends AND rotates around the column
+    var spiralR        = 4.5;
+    var spiralAngStep  = (Math.PI * 2) / 3.2;   // ~113 deg apart — 3 photos per turn
+    var spiralYStep    = 0.90;                   // 0.9 units lower per photo
+    var spiralStartY   = 1.4;
     shots.forEach(function(s, i) {
-      var tier = (i % 2 === 0) ? 1 : 2;
-      var r = (tier === 1) ? galTier1R : galTier2R;
-      var yc = (tier === 1) ? galTier1Y : galTier2Y;
-      // angular slot — each photo gets its own angle around the column
-      // spacing every ~360/n*1.0 so they don't overlap
-      var theta = (i / n) * Math.PI * 2;
-      var x = Math.cos(theta) * r;
-      var z = Math.sin(theta) * r;
-      var y = yc;
+      var theta = i * spiralAngStep;
+      var y     = spiralStartY - i * spiralYStep;
+      var x = Math.cos(theta) * spiralR;
+      var z = Math.sin(theta) * spiralR;
 
       var grp = new THREE.Group();
 
@@ -1415,10 +1414,10 @@
       grp.userData.photoMat = mat;
       grp.userData.shotIdx  = i;
       grp.userData.shotData = s;
-      grp.userData.tier     = tier;
+      grp.userData.tier     = 1;
       grp.userData.baseTheta = theta;
-      grp.userData.baseR    = r;
-      grp.userData.baseY    = yc;
+      grp.userData.baseR    = spiralR;
+      grp.userData.baseY    = y;
       // expose photo mesh for raycaster
       grp.userData.photoMesh = mesh;
       mesh.userData.shotIdx = i;
@@ -1468,21 +1467,32 @@
     galProg += (galTargetProg - galProg) * 0.085;
     var n = galPanels.length;
 
-    // ----- camera: auto-orbit + scroll bumps target angle so active photo is in front -----
-    var slowDrift  = now * 0.00006;                       // tiny constant rotation
-    var scrollBias = (n > 0) ? (galProg / n) * Math.PI * 2 : 0; // shift by exactly one slot per index
-    galCamAngTgt = -scrollBias + slowDrift;
+    // ----- camera: spiral-follow — orbit angle AND height track the active photo -----
+    var slowDrift  = now * 0.00006;
+    // spiral: camera angle follows helix angle of active photo
+    var activeIdxF = Math.max(0, Math.min(n - 1, galProg));
+    var spiralAngStep = (Math.PI * 2) / 3.2;
+    var spiralYStep   = 0.90;
+    var spiralStartY  = 1.4;
+    var activeTheta   = activeIdxF * spiralAngStep;
+    var activePhotoY  = spiralStartY - activeIdxF * spiralYStep;
+    // camera sits opposite the active photo (+ half turn) so it looks inward at it
+    galCamAngTgt = -(activeTheta) + Math.PI + slowDrift;
     galCamAng += (galCamAngTgt - galCamAng) * 0.07;
-    var camX = Math.cos(galCamAng + Math.PI / 2) * galCamRadius;
-    var camZ = Math.sin(galCamAng + Math.PI / 2) * galCamRadius;
-    // mouse parallax
-    var pY = galCamHeight + galMouseY * -0.7;
+    var camX = Math.cos(galCamAng) * galCamRadius;
+    var camZ = Math.sin(galCamAng) * galCamRadius;
+    // height: camera descends with spiral, hovering slightly above active photo
+    var camYTarget = activePhotoY + 1.5;
+    galCamHeight += (camYTarget - galCamHeight) * 0.05;
+    // mouse parallax on top
+    var pY = galCamHeight + galMouseY * -0.6;
     var pX = camX + galMouseX * 0.4;
     if (galCamera) {
       galCamera.position.x += (pX - galCamera.position.x) * 0.08;
       galCamera.position.y += (pY - galCamera.position.y) * 0.08;
       galCamera.position.z += (camZ - galCamera.position.z) * 0.08;
-      galCamera.lookAt(0, 0, 0);
+      // look toward active photo height for natural framing
+      galCamera.lookAt(0, activePhotoY, 0);
     }
 
     // ----- column particles: rise & wrap, gentle horizontal sway -----
@@ -1506,7 +1516,7 @@
       galTreeGroup.rotation.y = now * 0.00012;
     }
 
-    // ----- photos: stay on their tier, face camera, focus active -----
+    // ----- photos: helix positions, face camera, focus active -----
     if (n > 0) {
       var active = Math.round(galProg);
       if (active < 0) active = 0; if (active > n-1) active = n-1;
@@ -1517,29 +1527,28 @@
         var d2 = i - galProg;
         var ad = Math.abs(d2);
         var focus = Math.max(0, 1 - ad * 0.55); // 1 at active, 0 by ~1.8 away
-        // base position on orbit (already set at build time)
-        // gently bob
-        var bob = Math.sin(now * 0.001 + i) * 0.08;
+        // gentle bob — small vertical oscillation on top of helix position
+        var bob = Math.sin(now * 0.001 + i) * 0.07;
         p.position.y += ((p.userData.baseY + bob) - p.position.y) * 0.05;
-        // active photo: pulled slightly toward camera (zoom-in effect)
-        var pullR = p.userData.baseR - focus * 0.35;
+        // active photo: pulled slightly toward camera
+        var pullR = p.userData.baseR - focus * 0.4;
         var theta = p.userData.baseTheta;
         var tx = Math.cos(theta) * pullR;
         var tz = Math.sin(theta) * pullR;
         p.position.x += (tx - p.position.x) * 0.06;
         p.position.z += (tz - p.position.z) * 0.06;
-        // face camera (lerp via quaternion)
-        var lookTarget = camPos;
+        // face camera
         var tmp = new THREE.Object3D();
         tmp.position.copy(p.position);
-        tmp.lookAt(lookTarget);
+        tmp.lookAt(camPos);
         p.quaternion.slerp(tmp.quaternion, 0.10);
-        // scale, opacity, glow
-        var ts  = 0.78 + focus * 0.35;       // active ~1.13
-        var top = Math.max(0.20, 1 - ad * 0.30);
-        var tgl = focus > 0.4 ? (focus - 0.4) * 0.85 : 0;
-        var tfr = 0.25 + focus * 0.75;
-        var tbz = 0.45 + focus * 0.45;
+        // scale — active slightly larger, far ones smaller
+        var ts  = 0.72 + focus * 0.38;
+        // opacity — far photos fade but stay visible so you can see the spiral
+        var top = Math.max(0.15, 0.85 - ad * 0.25);
+        var tgl = focus > 0.35 ? (focus - 0.35) * 0.7 : 0;
+        var tfr = 0.20 + focus * 0.80;
+        var tbz = 0.40 + focus * 0.50;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
         p.scale.z += (ts - p.scale.z) * 0.10;
@@ -1591,10 +1600,10 @@
         galComposer = new THREE.EffectComposer(galRenderer);
         galComposer.setSize(w, h);
         galComposer.addPass(new THREE.RenderPass(galScene, galCamera));
-        galBloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 1.15, 0.65, 0.32);
-        galBloomPass.threshold = 0.32;
-        galBloomPass.strength  = 1.15;
-        galBloomPass.radius    = 0.7;
+        galBloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 0.38, 0.45, 0.68);
+        galBloomPass.threshold = 0.68;
+        galBloomPass.strength  = 0.38;
+        galBloomPass.radius    = 0.45;
         galComposer.addPass(galBloomPass);
         var copy = new THREE.ShaderPass(THREE.CopyShader);
         copy.renderToScreen = true;
