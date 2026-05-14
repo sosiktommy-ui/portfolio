@@ -1319,12 +1319,14 @@
     return t;
   }
 
-  // build STACK of cards — active in front of camera, neighbours behind it (activetheory-style)
-  var galStepProg = 1;       // logical step = 1 per card
-  var galTargetProg = 0;     // target index float
-  var galProg = 0;           // smoothed actual
-  var galMaxProg = 0;        // = n - 1
-  // legacy holdovers (referenced elsewhere — keep but unused)
+  // build RING of cards orbiting around the tree
+  var galStepProg = 1;
+  var galTargetProg = 0;
+  var galProg = 0;
+  var galMaxProg = 0;
+  var galRingRadius = 3.6;     // distance from tree center
+  var galViewSlot = new THREE.Vector3(2.0, 0.5, 2.6); // active card pulled out toward camera/right
+  // legacy holdovers
   var galHelixStep = 1;
   var galHelixRadius = 0;
   var galTargetY = 0;
@@ -1336,13 +1338,12 @@
     galMaxProg = n - 1;
     shots.forEach(function(s, i) {
       var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.62), mat);
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), mat);
       var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(2.85, 1.85), gm);
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(2.65, 1.74), gm);
       gmesh.position.z = -0.015;
       mesh.add(gmesh);
-      // thin frame outline
-      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.62, 1.64));
+      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.42, 1.52));
       var frameMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0 });
       var frame = new THREE.LineSegments(frameGeo, frameMat);
       frame.position.z = 0.005;
@@ -1351,6 +1352,7 @@
       mesh.userData.frameMat = frameMat;
       mesh.userData.shotIdx = i;
       mesh.userData.shotData = s;
+      mesh.userData.baseAngle = (i / n) * Math.PI * 2;
       og.add(mesh);
     });
     sc.add(og);
@@ -1382,72 +1384,83 @@
       galCamera.aspect = w / h;
       galCamera.updateProjectionMatrix();
     }
-    // smooth progress
     galProg += (galTargetProg - galProg) * 0.085;
-    // camera FIXED — active card stays centred on screen
+    // camera fixed — offset to LEFT so tree stays center-left, viewing slot on the right
     if (galCamera) {
-      galCamera.position.set(0, 0.2, 5.2);
-      galCamera.lookAt(0, 0, 0);
+      galCamera.position.set(-1.4, 1.0, 6.4);
+      galCamera.lookAt(0.6, 0.2, 0);
     }
-    // tree gently behind, only mild scroll-linked drift (decorative)
+    // tree gently sways with scroll
     if (galTreeGroup) {
-      galTreeGroup.rotation.y = galProg * 0.25;
-      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.15;
+      galTreeGroup.rotation.y = galProg * 0.18;
+      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.10;
     }
-    // arrange each card relative to current progress
+    // arrange cards on a ring around tree; rotate ring so active card swings into front slot
     var n = galPanels.length;
     if (n > 0) {
       var active = Math.round(galProg);
       if (active < 0) active = 0; if (active > n-1) active = n-1;
       setGalActive(active);
+      var slotAngle = 0;            // angle 0 = +X side (front-right of tree)
+      var step = (Math.PI * 2) / n;
       for (var pi = 0; pi < n; pi++) {
         var p = galPanels[pi];
-        var rel = pi - galProg;            // 0 = centered, >0 = upcoming, <0 = passed
-        var ar  = Math.abs(rel);
-        // position
-        var tx, ty, tz, trY, trZ, ts, top;
-        if (rel >= 0) {
-          // upcoming: drift to the right & deeper
-          tx  =  Math.sin(rel * 0.55) * (1.7 + rel * 0.25);
-          ty  = -rel * 0.20;
-          tz  = -rel * 1.55 - Math.min(rel, 1) * 0.4;
-          trY = -rel * 0.22;
-          trZ =  rel * 0.04;
-          ts  =  Math.max(0.55, 1 - rel * 0.10);
-          top =  Math.max(0, 1 - rel * 0.28);
+        // current angle relative to slot
+        var rel = pi - galProg;
+        // wrap to nearest path
+        while (rel >  n/2) rel -= n;
+        while (rel < -n/2) rel += n;
+        var ang = slotAngle + rel * step;
+        // ring position
+        var rx = Math.cos(ang) * galRingRadius;
+        var rz = Math.sin(ang) * galRingRadius;
+        var ry = 0.5 + Math.sin(rel * 0.7) * 0.15;
+        // proximity to slot (0 = active)
+        var ar = Math.abs(rel);
+        // when active, pull OUT of ring toward viewing slot
+        var pullT = Math.max(0, 1 - ar * 1.4); // 1 at active, 0 by ~0.7 away
+        var tx = rx + (galViewSlot.x - rx) * pullT;
+        var ty = ry + (galViewSlot.y - ry) * pullT;
+        var tz = rz + (galViewSlot.z - rz) * pullT;
+        // facing
+        var faceTargetX, faceTargetZ;
+        if (pullT > 0.5) {
+          // active card faces camera
+          faceTargetX = galCamera.position.x;
+          faceTargetZ = galCamera.position.z;
         } else {
-          // passed: drift to the left & forward (towards camera) then out
-          var r = -rel;
-          tx  = -Math.sin(r * 0.7) * (1.9 + r * 0.4);
-          ty  =  r * 0.65;
-          tz  =  r * 0.45;                  // come closer to camera then off
-          trY =  r * 0.28;
-          trZ = -r * 0.05;
-          ts  =  Math.max(0.4, 1 - r * 0.18);
-          top =  Math.max(0, 1 - r * 0.55);
+          // non-active faces tree center (so back is to outside)
+          faceTargetX = 0;
+          faceTargetZ = 0;
         }
-        // active boost
-        if (ar < 0.5) {
-          var k = 1 - ar * 2; // 0..1 closer to 0 means more centred
-          ts  += 0.04 * k;
-          top  = Math.min(1, top + 0.15 * k);
-        }
-        // lerp position/rotation/scale/opacity
-        p.position.x += (tx - p.position.x) * 0.10;
-        p.position.y += (ty - p.position.y) * 0.10;
-        p.position.z += (tz - p.position.z) * 0.10;
-        p.rotation.y += (trY - p.rotation.y) * 0.10;
-        p.rotation.z += (trZ - p.rotation.z) * 0.10;
+        // lerp position
+        p.position.x += (tx - p.position.x) * 0.09;
+        p.position.y += (ty - p.position.y) * 0.09;
+        p.position.z += (tz - p.position.z) * 0.09;
+        // compute target yaw to face target
+        var dx = faceTargetX - p.position.x;
+        var dz = faceTargetZ - p.position.z;
+        var tyaw = Math.atan2(dx, dz);
+        // lerp yaw shortest way
+        var curYaw = p.rotation.y;
+        var diff = tyaw - curYaw;
+        while (diff >  Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        p.rotation.y += diff * 0.10;
+        // scale & opacity
+        var ts = 0.7 + pullT * 0.45;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
-        if (p.material)            p.material.opacity            += (top - p.material.opacity) * 0.10;
-        if (p.userData.frameMat)   p.userData.frameMat.opacity   += (top * 0.6 - p.userData.frameMat.opacity) * 0.10;
+        var top = 0.25 + pullT * 0.75;
+        // hide cards on the FAR side of the ring (behind tree from camera) more aggressively
+        if (rz < -1.5 && pullT < 0.3) top *= 0.35;
+        if (p.material)          p.material.opacity          += (top - p.material.opacity) * 0.10;
+        if (p.userData.frameMat) p.userData.frameMat.opacity += (top * 0.7 - p.userData.frameMat.opacity) * 0.10;
         if (p.userData.glowMat) {
-          var tg = ar < 0.4 ? 0.28 * (1 - ar / 0.4) : 0;
+          var tg = pullT > 0.6 ? 0.30 * (pullT - 0.6) / 0.4 : 0;
           p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.10;
         }
-        // render order: bigger Z drawn first so far cards stay behind
-        p.renderOrder = -tz;
+        p.renderOrder = pullT * 10 + (5 - rz);
       }
     }
     galRenderer.render(galScene, galCamera);
@@ -1473,26 +1486,83 @@
     document.body.style.overflow = 'hidden';
     var w = window.innerWidth, h = window.innerHeight;
     galScene = new THREE.Scene();
-    galCamera = new THREE.PerspectiveCamera(46, w/h, 0.1, 200);
+    galCamera = new THREE.PerspectiveCamera(48, w/h, 0.1, 200);
     galTargetProg = 0; galProg = 0;
-    galCamera.position.set(0, 0.2, 5.2);
-    galCamera.lookAt(0, 0, 0);
+    galCamera.position.set(-1.4, 1.0, 6.4);
+    galCamera.lookAt(0.6, 0.2, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
     galRenderer.setClearColor(0x000000, 0);
-    galScene.fog = new THREE.FogExp2(0x03040a, 0.055);
+    galScene.fog = new THREE.FogExp2(0x04030a, 0.038);
     galScene.add(new THREE.AmbientLight(0xa78bfa, 0.45));
-    var pl = new THREE.PointLight(0x7c3aed, 2.5, 14);
-    pl.position.set(0, 1.5, 3.5); galScene.add(pl);
-    var pl2 = new THREE.PointLight(0x4c1d95, 1.8, 12);
-    pl2.position.set(0, -2, 2); galScene.add(pl2);
+    var pl = new THREE.PointLight(0x7c3aed, 2.8, 16);
+    pl.position.set(0, 2.5, 4); galScene.add(pl);
+    var pl2 = new THREE.PointLight(0x4c1d95, 2.0, 14);
+    pl2.position.set(0, -3, 2); galScene.add(pl2);
+    var pl3 = new THREE.PointLight(0xc4b5fd, 1.4, 10);
+    pl3.position.set(3, 0.5, 3.5); galScene.add(pl3);
+
+    // starfield backdrop (far)
+    (function starfield() {
+      var sc = 1400, sp = new Float32Array(sc*3), ss = 9001;
+      for (var i = 0; i < sc; i++) {
+        ss = (ss*1664525+1013904223)&0xffffffff; var u = (ss>>>0)/4294967295;
+        ss = (ss*1664525+1013904223)&0xffffffff; var v = (ss>>>0)/4294967295;
+        ss = (ss*1664525+1013904223)&0xffffffff; var d = (ss>>>0)/4294967295;
+        var th = u * Math.PI * 2;
+        var ph = Math.acos(2*v - 1);
+        var r  = 35 + d * 25;
+        sp[i*3]   = r * Math.sin(ph) * Math.cos(th);
+        sp[i*3+1] = r * Math.cos(ph);
+        sp[i*3+2] = r * Math.sin(ph) * Math.sin(th);
+      }
+      var sgeo = new THREE.BufferGeometry();
+      sgeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+      var smat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.12, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+      galScene.add(new THREE.Points(sgeo, smat));
+    })();
+
+    // nebula plane far behind
+    (function nebula() {
+      var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 1024;
+      var cx = cv.getContext('2d');
+      var bg = cx.createRadialGradient(512, 512, 80, 512, 512, 600);
+      bg.addColorStop(0, 'rgba(167,139,250,0.55)');
+      bg.addColorStop(0.35, 'rgba(124,58,237,0.30)');
+      bg.addColorStop(0.7, 'rgba(76,29,149,0.12)');
+      bg.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = bg; cx.fillRect(0, 0, 1024, 1024);
+      // noisy blobs
+      for (var k = 0; k < 80; k++) {
+        var bx = Math.random()*1024, by = Math.random()*1024;
+        var br = 30 + Math.random()*120;
+        var rg = cx.createRadialGradient(bx, by, 0, bx, by, br);
+        rg.addColorStop(0, 'rgba(196,181,253,' + (0.08 + Math.random()*0.10) + ')');
+        rg.addColorStop(1, 'rgba(196,181,253,0)');
+        cx.fillStyle = rg; cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI*2); cx.fill();
+      }
+      var ntex = new THREE.CanvasTexture(cv);
+      var nmat = new THREE.MeshBasicMaterial({ map: ntex, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+      var np = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), nmat);
+      np.position.set(0, 0, -14);
+      galScene.add(np);
+    })();
+
+    // distant grid floor (faint horizon)
+    (function gridFloor() {
+      var g = new THREE.GridHelper(40, 40, 0x4c1d95, 0x2a1b4d);
+      g.material.transparent = true; g.material.opacity = 0.18;
+      g.position.y = -3.5;
+      galScene.add(g);
+    })();
+
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     buildGalTree(galScene);
-    // push tree far behind cards & scale down so it stays decorative
+    // tree stays BIG and centered — the showpiece
     if (galTreeGroup) {
-      galTreeGroup.position.set(0, -1.5, -6.5);
-      galTreeGroup.scale.set(0.85, 0.85, 0.85);
+      galTreeGroup.position.set(0, 0, 0);
+      galTreeGroup.scale.set(1.15, 1.15, 1.15);
     }
     var shots = data.shots, pending = shots.length;
     function afterLoad() {
@@ -1623,52 +1693,64 @@
   });
 
   // clickable 3D screenshots on main stage — raycaster hit-test
+  // (canvas has pointer-events:none, so listen on the scroller layer that sits above)
   (function mainStageClick() {
     if (!canvas) return;
+    var scroller = document.getElementById('xp-scroller') || document;
     var mainRay = new THREE.Raycaster();
     var lastDown = { x: 0, y: 0, t: 0 };
-    canvas.addEventListener('pointerdown', function(e) {
-      lastDown.x = e.clientX; lastDown.y = e.clientY; lastDown.t = Date.now();
-    });
-    canvas.addEventListener('pointerup', function(e) {
-      if (galleryOpen) return;
-      var dx = Math.abs(e.clientX - lastDown.x), dy = Math.abs(e.clientY - lastDown.y);
-      var dt = Date.now() - lastDown.t;
-      if (dx > 8 || dy > 8 || dt > 600) return; // it was a drag/long press, not a click
-      var r = canvas.getBoundingClientRect();
-      var nx = ((e.clientX - r.left) / r.width) * 2 - 1;
-      var ny = -(((e.clientY - r.top) / r.height) * 2 - 1);
-      mainRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
-      // collect all panel meshes
+    function collectPool() {
       var pool = [];
       clusters.forEach(function(g) {
         if (g.userData && g.userData.panels) {
           g.userData.panels.forEach(function(p) { if (p) pool.push(p); });
         }
       });
-      var hits = mainRay.intersectObjects(pool, false);
+      return pool;
+    }
+    function raycast(e) {
+      var nx = (e.clientX / window.innerWidth) * 2 - 1;
+      var ny = -((e.clientY / window.innerHeight) * 2 - 1);
+      mainRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
+      return mainRay.intersectObjects(collectPool(), false);
+    }
+    function isUI(t) {
+      if (!t) return false;
+      var el = t;
+      while (el && el !== document.body) {
+        var cls = el.className || '';
+        if (typeof cls === 'string') {
+          if (/xp-gal-trigger|xp-enter-btn|xp-cta|xp-link|xp-button|xp-proj-h2|xp-foot/.test(cls)) return true;
+        }
+        if (el.tagName === 'A' || el.tagName === 'BUTTON' || el.tagName === 'INPUT') return true;
+        el = el.parentElement;
+      }
+      return false;
+    }
+    document.addEventListener('pointerdown', function(e) {
+      lastDown.x = e.clientX; lastDown.y = e.clientY; lastDown.t = Date.now();
+    });
+    document.addEventListener('pointerup', function(e) {
+      if (galleryOpen) return;
+      if (isUI(e.target)) return;
+      var dx = Math.abs(e.clientX - lastDown.x), dy = Math.abs(e.clientY - lastDown.y);
+      var dt = Date.now() - lastDown.t;
+      if (dx > 8 || dy > 8 || dt > 600) return;
+      var hits = raycast(e);
       if (hits.length) {
         var key = hits[0].object.userData.projectKey;
         if (key) openGallery(key);
       }
     });
-    // cursor hover feedback
-    canvas.style.cursor = 'default';
-    canvas.addEventListener('pointermove', function(e) {
-      if (galleryOpen) return;
-      var r = canvas.getBoundingClientRect();
-      var nx = ((e.clientX - r.left) / r.width) * 2 - 1;
-      var ny = -(((e.clientY - r.top) / r.height) * 2 - 1);
-      mainRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
-      var pool = [];
-      clusters.forEach(function(g) {
-        if (g.userData && g.userData.panels) {
-          g.userData.panels.forEach(function(p) { if (p) pool.push(p); });
-        }
+    // hover cursor feedback on scroller (where pointer actually lives)
+    if (scroller && scroller.addEventListener) {
+      scroller.addEventListener('pointermove', function(e) {
+        if (galleryOpen) return;
+        if (isUI(e.target)) { scroller.style.cursor = ''; return; }
+        var hits = raycast(e);
+        scroller.style.cursor = hits.length ? 'pointer' : '';
       });
-      var hits = mainRay.intersectObjects(pool, false);
-      canvas.style.cursor = hits.length ? 'pointer' : 'default';
-    });
+    }
   })();
 
   // -----------------------------------------------------------
