@@ -1133,6 +1133,7 @@
 
   // gallery 3D state
   var galScene, galRenderer, galCamera, galRaf;
+  var galComposer = null, galBloomPass = null;
   var galOrbitGroup, galPanels = [], galActiveIdx = 0;
   var galTreeGroup, galParticlesObj;
   var galDragging = false, galDragStartX = 0, galDragMoved = false, galRotVel = 0;
@@ -1152,100 +1153,126 @@
   var galPrevBtn    = document.getElementById('xp-gal-prev');
   var galNextBtn    = document.getElementById('xp-gal-next');
 
-  // --- procedural glowing tree ---
+  // --- procedural BLOOM COLUMN — vertical rising particle column (activetheory-style) ---
+  var galColumnData = null;
   function buildGalTree(sc) {
     var g = new THREE.Group();
-    var seed = 7;
-    function rnd() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 4294967295; }
+    // soft round sprite texture
+    var spriteCv = document.createElement('canvas'); spriteCv.width = 128; spriteCv.height = 128;
+    var sctx = spriteCv.getContext('2d');
+    var grad = sctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(0.55, 'rgba(255,255,255,0.18)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    sctx.fillStyle = grad; sctx.fillRect(0, 0, 128, 128);
+    var spriteTex = new THREE.CanvasTexture(spriteCv);
+    spriteTex.minFilter = THREE.LinearFilter; spriteTex.magFilter = THREE.LinearFilter;
 
-    function seg(a, b, r, op) {
-      var m1 = a.clone().lerp(b, 0.33).addScaledVector(new THREE.Vector3(rnd()-0.5, 0, rnd()-0.5), r * 5);
-      var m2 = a.clone().lerp(b, 0.66).addScaledVector(new THREE.Vector3(rnd()-0.5, 0, rnd()-0.5), r * 5);
-      var crv = new THREE.CatmullRomCurve3([a, m1, m2, b]);
-      var geo = new THREE.TubeGeometry(crv, 8, r, 6, false);
-      var mat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: op !== undefined ? op : Math.min(0.88, 0.15 + r * 12), blending: THREE.AdditiveBlending, depthWrite: false });
-      g.add(new THREE.Mesh(geo, mat));
-      var tg = new THREE.Mesh(new THREE.SphereGeometry(r * 2.8, 7, 7), new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
-      tg.position.copy(b); g.add(tg);
+    // 6500 particles forming the column
+    var N = 6500;
+    var positions = new Float32Array(N * 3);
+    var colors    = new Float32Array(N * 3);
+    var sizes     = new Float32Array(N);
+    var speeds    = new Float32Array(N);
+    var phases    = new Float32Array(N);
+    var radii     = new Float32Array(N);
+    var seed = 42;
+    function r01() { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 4294967295; }
+    // HSV→RGB
+    function hsv(h, s, v, out, o) {
+      var c = v * s, x = c * (1 - Math.abs((h/60) % 2 - 1)), m = v - c;
+      var R=0,G=0,B=0;
+      if (h <  60) { R=c; G=x; B=0; }
+      else if (h <120) { R=x; G=c; B=0; }
+      else if (h <180) { R=0; G=c; B=x; }
+      else if (h <240) { R=0; G=x; B=c; }
+      else if (h <300) { R=x; G=0; B=c; }
+      else             { R=c; G=0; B=x; }
+      out[o] = R+m; out[o+1] = G+m; out[o+2] = B+m;
     }
-
-    function grow(start, dir, len, r, depth) {
-      if (depth < 0 || r < 0.003) return;
-      var end = start.clone().addScaledVector(dir, len);
-      seg(start, end, r);
-      var kids = depth >= 3 ? 3 : 2;
-      for (var k = 0; k < kids; k++) {
-        var nd = new THREE.Vector3(dir.x + (rnd()-0.5)*0.95, dir.y + rnd()*0.28 + 0.05, dir.z + (rnd()-0.5)*0.95).normalize();
-        grow(end, nd, len * 0.62, r * 0.58, depth - 1);
-      }
-    }
-
-    grow(new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1, 0), 0.88, 0.058, 4);
-
-    // long vertical trunk going DOWN through the helix (tree extends deep)
-    var trunkBottomY = -14; // covers up to ~9 helix steps
-    var trunkSegs = 12;
-    for (var ti = 0; ti < trunkSegs; ti++) {
-      var ya = -1.6 + (trunkBottomY + 1.6) * (ti / trunkSegs);
-      var yb = -1.6 + (trunkBottomY + 1.6) * ((ti + 1) / trunkSegs);
-      var ro = 0.052 * (1 - ti / (trunkSegs + 2));
-      seg(new THREE.Vector3((rnd()-0.5)*0.12, ya, (rnd()-0.5)*0.12),
-          new THREE.Vector3((rnd()-0.5)*0.18, yb, (rnd()-0.5)*0.18), Math.max(0.012, ro), 0.7);
-    }
-    // side branches at multiple depths (every ~1.5 units)
-    for (var by = -2.2; by > trunkBottomY + 1; by -= 1.5) {
-      var bn = 4 + Math.floor(rnd() * 3);
-      for (var bi2 = 0; bi2 < bn; bi2++) {
-        var bang = rnd() * Math.PI * 2;
-        var blen = 0.5 + rnd() * 0.7;
-        var endY = by + (rnd() - 0.5) * 0.6;
-        seg(new THREE.Vector3(0, by, 0),
-            new THREE.Vector3(Math.sin(bang)*blen, endY, Math.cos(bang)*blen),
-            0.011 + rnd()*0.008, 0.55);
-        // tiny sub-tip
-        var sub = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6),
-          new THREE.MeshBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
-        sub.position.set(Math.sin(bang)*blen*1.05, endY, Math.cos(bang)*blen*1.05);
-        g.add(sub);
-      }
-    }
-
-    // root tendrils
-    for (var ri = 0; ri < 6; ri++) {
-      var ra = (ri / 6) * Math.PI * 2;
-      seg(new THREE.Vector3(Math.sin(ra)*0.35, -1.45, Math.cos(ra)*0.35),
-          new THREE.Vector3(Math.sin(ra)*0.70, -1.90, Math.cos(ra)*0.70), 0.013, 0.45);
-    }
-
-    // core + outer glow
-    var coreM = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending, depthWrite: false });
-    var core = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), coreM);
-    core.position.y = -1.6; g.add(core);
-    var outerM = new THREE.MeshBasicMaterial({ color: 0x6d28d9, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
-    var outer = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 14), outerM);
-    outer.position.y = -1.6; g.add(outer);
-    var topM = new THREE.MeshBasicMaterial({ color: 0x4c1d95, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
-    var topGlow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 14, 14), topM);
-    topGlow.position.y = 0.4; g.add(topGlow);
-
-    // particle cloud — distributed along the whole vertical column
-    var pCount = 1200, pp = new Float32Array(pCount * 3), ps = 31337;
-    for (var pi = 0; pi < pCount; pi++) {
-      ps = (ps*1664525+1013904223)&0xffffffff; var rv = (ps>>>0)/4294967295;
-      ps = (ps*1664525+1013904223)&0xffffffff; var ph = (ps>>>0)/4294967295*Math.PI*2;
-      ps = (ps*1664525+1013904223)&0xffffffff; var yv = (ps>>>0)/4294967295;
-      var rad = 0.4 + rv * 3.2;
-      pp[pi*3]   = rad*Math.cos(ph);
-      pp[pi*3+1] = -14 + yv * 16; // spread from -14 up to +2
-      pp[pi*3+2] = rad*Math.sin(ph);
+    var H_BOT = -8.0, H_TOP = 7.0;     // vertical extent of column
+    for (var i = 0; i < N; i++) {
+      var y = H_BOT + r01() * (H_TOP - H_BOT);
+      // radius profile: narrow at bottom, wider in middle, narrows at top
+      var t  = (y - H_BOT) / (H_TOP - H_BOT);   // 0..1
+      var rprof = Math.sin(t * Math.PI) * 1.15 + 0.18;
+      var r  = rprof * (0.4 + r01() * 1.0);
+      var th = r01() * Math.PI * 2;
+      positions[i*3]   = Math.cos(th) * r;
+      positions[i*3+1] = y;
+      positions[i*3+2] = Math.sin(th) * r;
+      // color: dominant magenta-violet (270-320°), 10% cyan accents
+      var hue;
+      var roll = r01();
+      if (roll < 0.10)       hue = 185 + r01() * 25;   // cyan
+      else if (roll < 0.20)  hue = 320 + r01() * 25;   // pink
+      else                   hue = 260 + r01() * 50;   // violet→magenta
+      hsv(hue, 0.75 + r01() * 0.25, 0.8 + r01() * 0.2, colors, i*3);
+      sizes[i]  = 0.08 + r01() * 0.22;
+      speeds[i] = 0.18 + r01() * 0.6;
+      phases[i] = r01() * Math.PI * 2;
+      radii[i]  = r;
     }
     var pgeo = new THREE.BufferGeometry();
-    pgeo.setAttribute('position', new THREE.BufferAttribute(pp, 3));
-    galParticlesObj = new THREE.Points(pgeo, new THREE.PointsMaterial({ color: 0x8b5cf6, size: 0.014, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
-    g.add(galParticlesObj);
+    pgeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    pgeo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+    pgeo.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
+
+    // Custom shader for size-attenuation + per-vertex color + sprite
+    var pmat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTex:  { value: spriteTex },
+        uTime: { value: 0 }
+      },
+      vertexShader: [
+        'attribute float size;',
+        'varying vec3 vColor;',
+        'void main() {',
+        '  vColor = color;',
+        '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+        '  gl_Position = projectionMatrix * mv;',
+        '  gl_PointSize = size * (320.0 / max(-mv.z, 0.1));',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform sampler2D uTex;',
+        'varying vec3 vColor;',
+        'void main() {',
+        '  vec4 tx = texture2D(uTex, gl_PointCoord);',
+        '  float a = tx.a;',
+        '  if (a < 0.02) discard;',
+        '  gl_FragColor = vec4(vColor * (1.2 + tx.r * 0.3), a);',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexColors: true
+    });
+    var points = new THREE.Points(pgeo, pmat);
+    g.add(points);
+
+    // central core glow at base
+    var coreM = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+    var core = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), coreM);
+    core.position.y = H_BOT + 0.4; g.add(core);
+    var outerM = new THREE.MeshBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
+    var outer = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), outerM);
+    outer.position.y = H_BOT + 0.4; g.add(outer);
+
     sc.add(g);
     galTreeGroup = g;
+    galParticlesObj = points;
+    galColumnData = { positions: positions, speeds: speeds, phases: phases, radii: radii, count: N, yMin: H_BOT, yMax: H_TOP, mat: pmat };
   }
+
+  // canvas texture for AI Voice node cards — dashboard-like module
+  function makeNodeTex(label) {
+    var W = 720, H = 450;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var cx = cv.getContext('2d');
+    // base gradient
 
   // canvas texture for AI Voice node cards — dashboard-like module
   function makeNodeTex(label) {
@@ -1319,63 +1346,94 @@
     return t;
   }
 
-  // SPIRAL of photos descending around the tree-trunk axis.
-  // Camera is fixed; as user scrolls, the spiral (and tree) rises + counter-rotates
-  // so the next photo always lands DIRECTLY in front of the camera, framed for viewing.
+  // PHOTOS arranged on 2 orbital tiers around the particle column.
+  // Camera auto-orbits + scroll shifts orbit angle to bring next photo to front.
   var galStepProg = 1;
   var galTargetProg = 0;
   var galProg = 0;
   var galMaxProg = 0;
-  var galSpiralRadius = 2.95;             // distance from trunk
-  var galSpiralYStep  = 2.05;             // vertical gap between consecutive photos
-  var galSpiralAngStep = 100 * Math.PI / 180; // angular gap (~100°)
-  var galSpiralStartAng = Math.PI / 2;    // photo #0 sits on +Z (toward camera) when galProg=0
+  var galTier1R = 4.0;  var galTier1Y =  0.6;
+  var galTier2R = 5.7;  var galTier2Y = -0.7;
+  var galCamRadius = 9.0;
+  var galCamHeight = 1.4;
+  var galCamAng    = 0;        // current camera azimuth
+  var galCamAngTgt = 0;
+  var galMouseX = 0, galMouseY = 0;
   // legacy holdovers
-  var galHelixStep = 1;
-  var galHelixRadius = 0;
-  var galTargetY = 0;
-  var galCameraY = 0;
-  var galMaxScroll = 0;
-  var galRingRadius = 0;
-  var galViewSlot = new THREE.Vector3(0, 0, 0);
+  var galHelixStep = 1; var galHelixRadius = 0; var galTargetY = 0; var galCameraY = 0; var galMaxScroll = 0;
+  var galRingRadius = 0; var galViewSlot = new THREE.Vector3(0, 0, 0);
+  var galSpiralRadius = 0, galSpiralYStep = 0, galSpiralAngStep = 0, galSpiralStartAng = 0;
   function buildGalOrbit(sc, shots, textures) {
     var og = new THREE.Group();
     var n = shots.length;
     galMaxProg = n - 1;
+    // distribute photos evenly across both tiers
     shots.forEach(function(s, i) {
-      var theta = galSpiralStartAng + i * galSpiralAngStep;
-      var x = Math.cos(theta) * galSpiralRadius;
-      var z = Math.sin(theta) * galSpiralRadius;
-      var y = -i * galSpiralYStep;
-      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.9), mat);
-      // soft outer glow
+      var tier = (i % 2 === 0) ? 1 : 2;
+      var r = (tier === 1) ? galTier1R : galTier2R;
+      var yc = (tier === 1) ? galTier1Y : galTier2Y;
+      // angular slot — each photo gets its own angle around the column
+      // spacing every ~360/n*1.0 so they don't overlap
+      var theta = (i / n) * Math.PI * 2;
+      var x = Math.cos(theta) * r;
+      var z = Math.sin(theta) * r;
+      var y = yc;
+
+      var grp = new THREE.Group();
+
+      // soft outer glow plane (additive)
       var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(3.32, 2.18), gm);
-      gmesh.position.z = -0.018;
-      mesh.add(gmesh);
-      // thin frame
-      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(3.02, 1.92));
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.35), gm);
+      gmesh.position.z = -0.03;
+      grp.add(gmesh);
+
+      // device bezel — flat dark frame slightly behind/around the photo
+      var bezelMat = new THREE.MeshBasicMaterial({ color: 0x0d0820, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      var bezel = new THREE.Mesh(new THREE.PlaneGeometry(3.18, 1.96), bezelMat);
+      bezel.position.z = -0.012;
+      grp.add(bezel);
+
+      // photo plane
+      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.85), mat);
+      grp.add(mesh);
+
+      // frame outline
+      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(3.02, 1.87));
       var frameMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0 });
       var frame = new THREE.LineSegments(frameGeo, frameMat);
-      frame.position.z = 0.006;
-      mesh.add(frame);
-      mesh.position.set(x, y, z);
-      // orient so photo's front faces OUTWARD from trunk; when group counter-rotates
-      // to bring photo #i to angle π/2, its normal lines up with +Z toward camera.
-      mesh.rotation.y = -theta + Math.PI / 2;
-      mesh.userData.glowMat = gm;
-      mesh.userData.frameMat = frameMat;
+      frame.position.z = 0.012;
+      grp.add(frame);
+
+      grp.position.set(x, y, z);
+      // face roughly outward from column (will be re-lerped each frame to look at camera)
+      grp.lookAt(x * 3, y, z * 3);
+
+      grp.userData.glowMat  = gm;
+      grp.userData.bezelMat = bezelMat;
+      grp.userData.frameMat = frameMat;
+      grp.userData.photoMat = mat;
+      grp.userData.shotIdx  = i;
+      grp.userData.shotData = s;
+      grp.userData.tier     = tier;
+      grp.userData.baseTheta = theta;
+      grp.userData.baseR    = r;
+      grp.userData.baseY    = yc;
+      // expose photo mesh for raycaster
+      grp.userData.photoMesh = mesh;
       mesh.userData.shotIdx = i;
-      mesh.userData.shotData = s;
-      mesh.userData.baseY = y;
-      mesh.userData.baseTheta = theta;
-      og.add(mesh);
+      og.add(grp);
     });
     sc.add(og);
     galOrbitGroup = og;
     galPanels = og.children.slice();
   }
+
+  // mouse-parallax tracking (also drives camera-orbit input)
+  window.addEventListener('mousemove', function(e) {
+    galMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    galMouseY = (e.clientY / window.innerHeight) * 2 - 1;
+  });
 
   function setGalActive(idx) {
     if (idx === galActiveIdx && galFrameTag && galFrameTag.textContent) return;
@@ -1392,61 +1450,107 @@
 
   var galRaycaster = new THREE.Raycaster();
 
+  var _galClock = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   function galTick() {
     if (!galScene || !galRenderer) return;
     galRaf = requestAnimationFrame(galTick);
+    var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var dt = Math.min(0.05, (now - _galClock) / 1000);
+    _galClock = now;
     var w = Math.max(1, galCanvas.clientWidth), h = Math.max(1, galCanvas.clientHeight);
     if (galRenderer.domElement.width !== w || galRenderer.domElement.height !== h) {
       galRenderer.setSize(w, h, false);
       galCamera.aspect = w / h;
       galCamera.updateProjectionMatrix();
+      if (galComposer) galComposer.setSize(w, h);
     }
+    // smooth progress
     galProg += (galTargetProg - galProg) * 0.085;
-    // camera fixed — looking straight at the spiral axis
+    var n = galPanels.length;
+
+    // ----- camera: auto-orbit + scroll bumps target angle so active photo is in front -----
+    var slowDrift  = now * 0.00006;                       // tiny constant rotation
+    var scrollBias = (n > 0) ? (galProg / n) * Math.PI * 2 : 0; // shift by exactly one slot per index
+    galCamAngTgt = -scrollBias + slowDrift;
+    galCamAng += (galCamAngTgt - galCamAng) * 0.07;
+    var camX = Math.cos(galCamAng + Math.PI / 2) * galCamRadius;
+    var camZ = Math.sin(galCamAng + Math.PI / 2) * galCamRadius;
+    // mouse parallax
+    var pY = galCamHeight + galMouseY * -0.7;
+    var pX = camX + galMouseX * 0.4;
     if (galCamera) {
-      galCamera.position.set(0, 0.4, 8.0);
+      galCamera.position.x += (pX - galCamera.position.x) * 0.08;
+      galCamera.position.y += (pY - galCamera.position.y) * 0.08;
+      galCamera.position.z += (camZ - galCamera.position.z) * 0.08;
       galCamera.lookAt(0, 0, 0);
     }
-    // lift + counter-rotate the entire spiral so photo #round(galProg)
-    // ends up exactly in front of camera at (0,0,R).
-    if (galOrbitGroup) {
-      var ty = galProg * galSpiralYStep;
-      var tr = -galProg * galSpiralAngStep;
-      galOrbitGroup.position.y += (ty - galOrbitGroup.position.y) * 0.12;
-      galOrbitGroup.rotation.y += (tr - galOrbitGroup.rotation.y) * 0.12;
+
+    // ----- column particles: rise & wrap, gentle horizontal sway -----
+    if (galColumnData) {
+      var d = galColumnData;
+      var pos = d.positions;
+      for (var pi = 0; pi < d.count; pi++) {
+        var y = pos[pi*3 + 1] + d.speeds[pi] * dt;
+        if (y > d.yMax) y = d.yMin + (y - d.yMax);
+        pos[pi*3 + 1] = y;
+        var ph = d.phases[pi] + now * 0.0006;
+        var rr = d.radii[pi];
+        pos[pi*3]     = Math.cos(ph) * rr;
+        pos[pi*3 + 2] = Math.sin(ph) * rr;
+      }
+      if (galParticlesObj && galParticlesObj.geometry && galParticlesObj.geometry.attributes.position) {
+        galParticlesObj.geometry.attributes.position.needsUpdate = true;
+      }
     }
-    // tree as the axis — moves with mild parallax, rotates softer than the spiral
     if (galTreeGroup) {
-      var tty = galProg * galSpiralYStep * 0.45;
-      var ttr = -galProg * galSpiralAngStep * 0.35;
-      galTreeGroup.position.y += (tty + (-1.5) - galTreeGroup.position.y) * 0.10;
-      galTreeGroup.rotation.y += (ttr - galTreeGroup.rotation.y) * 0.10;
-      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.15;
+      galTreeGroup.rotation.y = now * 0.00012;
     }
-    // per-photo focus/fade based on distance from active index
-    var n = galPanels.length;
+
+    // ----- photos: stay on their tier, face camera, focus active -----
     if (n > 0) {
       var active = Math.round(galProg);
       if (active < 0) active = 0; if (active > n-1) active = n-1;
       setGalActive(active);
-      for (var pi = 0; pi < n; pi++) {
-        var p = galPanels[pi];
-        var d = pi - galProg;
-        var ad = Math.abs(d);
-        var focus = Math.max(0, 1 - ad * 0.85);          // 1 at active, 0 by ~1.2 away
-        var ts  = 0.82 + focus * 0.23;                    // active = ~1.05
-        var top = ad < 0.5 ? 1.0 : Math.max(0.16, 1 - ad * 0.42);
-        var tgl = focus > 0.5 ? (focus - 0.5) * 0.7 : 0;
-        var tfr = 0.25 + focus * 0.65;
+      var camPos = galCamera.position;
+      for (var i = 0; i < n; i++) {
+        var p = galPanels[i];
+        var d2 = i - galProg;
+        var ad = Math.abs(d2);
+        var focus = Math.max(0, 1 - ad * 0.55); // 1 at active, 0 by ~1.8 away
+        // base position on orbit (already set at build time)
+        // gently bob
+        var bob = Math.sin(now * 0.001 + i) * 0.08;
+        p.position.y += ((p.userData.baseY + bob) - p.position.y) * 0.05;
+        // active photo: pulled slightly toward camera (zoom-in effect)
+        var pullR = p.userData.baseR - focus * 0.35;
+        var theta = p.userData.baseTheta;
+        var tx = Math.cos(theta) * pullR;
+        var tz = Math.sin(theta) * pullR;
+        p.position.x += (tx - p.position.x) * 0.06;
+        p.position.z += (tz - p.position.z) * 0.06;
+        // face camera (lerp via quaternion)
+        var lookTarget = camPos;
+        var tmp = new THREE.Object3D();
+        tmp.position.copy(p.position);
+        tmp.lookAt(lookTarget);
+        p.quaternion.slerp(tmp.quaternion, 0.10);
+        // scale, opacity, glow
+        var ts  = 0.78 + focus * 0.35;       // active ~1.13
+        var top = Math.max(0.20, 1 - ad * 0.30);
+        var tgl = focus > 0.4 ? (focus - 0.4) * 0.85 : 0;
+        var tfr = 0.25 + focus * 0.75;
+        var tbz = 0.45 + focus * 0.45;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
-        if (p.material)          p.material.opacity          += (top - p.material.opacity) * 0.10;
+        p.scale.z += (ts - p.scale.z) * 0.10;
+        if (p.userData.photoMat) p.userData.photoMat.opacity += (top - p.userData.photoMat.opacity) * 0.10;
         if (p.userData.frameMat) p.userData.frameMat.opacity += (tfr - p.userData.frameMat.opacity) * 0.10;
         if (p.userData.glowMat)  p.userData.glowMat.opacity  += (tgl - p.userData.glowMat.opacity) * 0.10;
+        if (p.userData.bezelMat) p.userData.bezelMat.opacity += (tbz - p.userData.bezelMat.opacity) * 0.10;
         p.renderOrder = 10 - ad * ad;
       }
     }
-    galRenderer.render(galScene, galCamera);
+    if (galComposer) galComposer.render(); else galRenderer.render(galScene, galCamera);
   }
 
   function openGallery(projectKey) {
@@ -1471,81 +1575,101 @@
     galScene = new THREE.Scene();
     galCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 200);
     galTargetProg = 0; galProg = 0;
-    galCamera.position.set(0, 0.4, 8.0);
+    galCamAng = 0; galCamAngTgt = 0;
+    galCamera.position.set(0, galCamHeight, galCamRadius);
     galCamera.lookAt(0, 0, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
     galRenderer.setClearColor(0x000000, 0);
-    galScene.fog = new THREE.FogExp2(0x04030a, 0.038);
-    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.45));
-    var pl = new THREE.PointLight(0x7c3aed, 2.8, 16);
-    pl.position.set(0, 2.5, 4); galScene.add(pl);
-    var pl2 = new THREE.PointLight(0x4c1d95, 2.0, 14);
-    pl2.position.set(0, -3, 2); galScene.add(pl2);
-    var pl3 = new THREE.PointLight(0xc4b5fd, 1.4, 10);
-    pl3.position.set(3, 0.5, 3.5); galScene.add(pl3);
+    galScene.fog = new THREE.FogExp2(0x04030a, 0.030);
 
-    // starfield backdrop (far)
+    // postprocess: real UnrealBloom if available, otherwise skip (additive glow alone)
+    galComposer = null; galBloomPass = null;
+    if (THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass && THREE.CopyShader) {
+      try {
+        galComposer = new THREE.EffectComposer(galRenderer);
+        galComposer.setSize(w, h);
+        galComposer.addPass(new THREE.RenderPass(galScene, galCamera));
+        galBloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 1.15, 0.65, 0.32);
+        galBloomPass.threshold = 0.32;
+        galBloomPass.strength  = 1.15;
+        galBloomPass.radius    = 0.7;
+        galComposer.addPass(galBloomPass);
+        var copy = new THREE.ShaderPass(THREE.CopyShader);
+        copy.renderToScreen = true;
+        galComposer.addPass(copy);
+      } catch (err) {
+        console.warn('Bloom postprocess failed, falling back to direct render:', err);
+        galComposer = null;
+      }
+    }
+    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.45));
+    var pl = new THREE.PointLight(0xec4899, 2.5, 18);
+    pl.position.set(0, 2.5, 4); galScene.add(pl);
+    var pl2 = new THREE.PointLight(0x06b6d4, 1.6, 16);
+    pl2.position.set(2, -2, -2); galScene.add(pl2);
+    var pl3 = new THREE.PointLight(0xa78bfa, 1.8, 14);
+    pl3.position.set(-3, 1, 3); galScene.add(pl3);
+
+    // starfield backdrop — multi-color (magenta + cyan accents)
     (function starfield() {
-      var sc = 1400, sp = new Float32Array(sc*3), ss = 9001;
+      var sc = 1800, sp = new Float32Array(sc*3), sclr = new Float32Array(sc*3), ss = 9001;
       for (var i = 0; i < sc; i++) {
         ss = (ss*1664525+1013904223)&0xffffffff; var u = (ss>>>0)/4294967295;
         ss = (ss*1664525+1013904223)&0xffffffff; var v = (ss>>>0)/4294967295;
         ss = (ss*1664525+1013904223)&0xffffffff; var d = (ss>>>0)/4294967295;
+        ss = (ss*1664525+1013904223)&0xffffffff; var cc = (ss>>>0)/4294967295;
         var th = u * Math.PI * 2;
         var ph = Math.acos(2*v - 1);
-        var r  = 35 + d * 25;
+        var r  = 35 + d * 30;
         sp[i*3]   = r * Math.sin(ph) * Math.cos(th);
         sp[i*3+1] = r * Math.cos(ph);
         sp[i*3+2] = r * Math.sin(ph) * Math.sin(th);
+        if (cc < 0.08)      { sclr[i*3]=0.4; sclr[i*3+1]=0.95; sclr[i*3+2]=1.0; } // cyan
+        else if (cc < 0.16) { sclr[i*3]=1.0; sclr[i*3+1]=0.45; sclr[i*3+2]=0.85; } // pink
+        else                { sclr[i*3]=1;   sclr[i*3+1]=1;    sclr[i*3+2]=1; }
       }
       var sgeo = new THREE.BufferGeometry();
       sgeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-      var smat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.12, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+      sgeo.setAttribute('color',    new THREE.BufferAttribute(sclr, 3));
+      var smat = new THREE.PointsMaterial({ vertexColors: true, size: 0.14, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
       galScene.add(new THREE.Points(sgeo, smat));
     })();
 
-    // nebula plane far behind
-    (function nebula() {
+    // double nebula (magenta near + cyan far)
+    function nebPlane(z, hue1, hue2, alpha) {
       var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 1024;
       var cx = cv.getContext('2d');
       var bg = cx.createRadialGradient(512, 512, 80, 512, 512, 600);
-      bg.addColorStop(0, 'rgba(167,139,250,0.55)');
-      bg.addColorStop(0.35, 'rgba(124,58,237,0.30)');
-      bg.addColorStop(0.7, 'rgba(76,29,149,0.12)');
+      bg.addColorStop(0, hue1);
+      bg.addColorStop(0.5, hue2);
       bg.addColorStop(1, 'rgba(0,0,0,0)');
       cx.fillStyle = bg; cx.fillRect(0, 0, 1024, 1024);
-      // noisy blobs
-      for (var k = 0; k < 80; k++) {
+      for (var k = 0; k < 60; k++) {
         var bx = Math.random()*1024, by = Math.random()*1024;
-        var br = 30 + Math.random()*120;
+        var br = 30 + Math.random()*140;
         var rg = cx.createRadialGradient(bx, by, 0, bx, by, br);
-        rg.addColorStop(0, 'rgba(196,181,253,' + (0.08 + Math.random()*0.10) + ')');
-        rg.addColorStop(1, 'rgba(196,181,253,0)');
+        rg.addColorStop(0, 'rgba(220,200,255,' + (0.08 + Math.random()*0.10) + ')');
+        rg.addColorStop(1, 'rgba(220,200,255,0)');
         cx.fillStyle = rg; cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI*2); cx.fill();
       }
       var ntex = new THREE.CanvasTexture(cv);
-      var nmat = new THREE.MeshBasicMaterial({ map: ntex, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
-      var np = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), nmat);
-      np.position.set(0, 0, -14);
+      var nmat = new THREE.MeshBasicMaterial({ map: ntex, transparent: true, opacity: alpha, depthWrite: false, blending: THREE.AdditiveBlending });
+      var np = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), nmat);
+      np.position.set(0, 0, z);
       galScene.add(np);
-    })();
-
-    // distant grid floor (faint horizon)
-    (function gridFloor() {
-      var g = new THREE.GridHelper(40, 40, 0x4c1d95, 0x2a1b4d);
-      g.material.transparent = true; g.material.opacity = 0.18;
-      g.position.y = -3.5;
-      galScene.add(g);
-    })();
+    }
+    nebPlane(-18, 'rgba(236,72,153,0.45)', 'rgba(124,58,237,0.22)', 0.8);
+    nebPlane(-26, 'rgba(6,182,212,0.30)',  'rgba(76,29,149,0.10)',  0.55);
 
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
+    galColumnData = null; galParticlesObj = null; galTreeGroup = null;
     buildGalTree(galScene);
-    // tree is the SPIRAL AXIS — big, centered, crown near top of view, trunk descends
+    // particle column is centered — no offset needed (already spans -8..+7)
     if (galTreeGroup) {
-      galTreeGroup.position.set(0, -1.5, 0);
-      galTreeGroup.scale.set(1.25, 1.25, 1.25);
+      galTreeGroup.position.set(0, 0, 0);
+      galTreeGroup.scale.set(1, 1, 1);
     }
     var shots = data.shots, pending = shots.length;
     function afterLoad() {
@@ -1594,6 +1718,8 @@
     galleryEl.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
     cancelAnimationFrame(galRaf);
+    if (galComposer) { galComposer = null; }
+    galBloomPass = null;
     if (galRenderer) { galRenderer.dispose(); galRenderer = null; }
     galLoadedTextures.forEach(function(t) { if (t && t.dispose) t.dispose(); });
     galLoadedTextures = []; galPanels = []; galScene = null;
@@ -1631,11 +1757,13 @@
     if (galTargetProg > galMaxProg) galTargetProg = galMaxProg;
   }
   function onGC(e) {
-    if (!galOrbitGroup || !galCamera) return;
+    if (!galCamera || !galPanels.length) return;
     galRaycaster.setFromCamera(new THREE.Vector2((e.clientX/galCanvas.clientWidth)*2-1, -((e.clientY/galCanvas.clientHeight)*2-1)), galCamera);
-    var hits = galRaycaster.intersectObjects(galPanels, false);
-    if (hits.length && hits[0].object.userData.shotIdx !== undefined) {
-      galTargetProg = hits[0].object.userData.shotIdx;
+    var hits = galRaycaster.intersectObjects(galPanels, true);
+    for (var hi = 0; hi < hits.length; hi++) {
+      var o = hits[hi].object;
+      while (o && o.userData.shotIdx === undefined) o = o.parent;
+      if (o && o.userData.shotIdx !== undefined) { galTargetProg = o.userData.shotIdx; return; }
     }
   }
 
