@@ -1381,7 +1381,7 @@
     var n = shots.length;
     galMaxProg = n - 1;
     // HELIX / SPIRAL — each photo descends AND rotates around the column
-    var spiralR        = 3.8;
+    var spiralR        = 5.2;
     var spiralAngStep  = (Math.PI * 2) / 3.0;   // 120 deg apart — exactly 3 per turn
     var spiralYStep    = 1.20;                   // vertical spacing per photo — clear staircase
     var spiralStartY   = 1.2;
@@ -1395,23 +1395,23 @@
 
       // soft outer glow plane (additive)
       var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.35), gm);
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 3.4), gm);
       gmesh.position.z = -0.03;
       grp.add(gmesh);
 
       // device bezel — flat dark frame slightly behind/around the photo
       var bezelMat = new THREE.MeshBasicMaterial({ color: 0x0d0820, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      var bezel = new THREE.Mesh(new THREE.PlaneGeometry(3.18, 1.96), bezelMat);
+      var bezel = new THREE.Mesh(new THREE.PlaneGeometry(4.45, 2.78), bezelMat);
       bezel.position.z = -0.012;
       grp.add(bezel);
 
       // photo plane
       var mat = new THREE.MeshBasicMaterial({ map: textures[i], color: 0xd8d8d8, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.85), mat);
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.60), mat);
       grp.add(mesh);
 
       // frame outline
-      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(3.02, 1.87));
+      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(4.22, 2.62));
       var frameMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0 });
       var frame = new THREE.LineSegments(frameGeo, frameMat);
       frame.position.z = 0.012;
@@ -1723,34 +1723,74 @@
     (function makeNebulaSky() {
       var cv = document.createElement('canvas'); cv.width = 2048; cv.height = 1024;
       var cx = cv.getContext('2d');
-      cx.fillStyle = '#010009'; cx.fillRect(0, 0, 2048, 1024);
-      // scatter 8 big nebula blobs at various UV coords
+      // deep space base
+      cx.fillStyle = '#02000f'; cx.fillRect(0, 0, 2048, 1024);
+      // large nebula clouds
       var blobs = [
-        {x:0.08, y:0.35, r:0.38, c1:'rgba(236,72,153,0.52)',  c2:'rgba(124,58,237,0.0)'},
-        {x:0.30, y:0.65, r:0.28, c1:'rgba(6,182,212,0.42)',   c2:'rgba(0,0,0,0)'},
-        {x:0.55, y:0.25, r:0.32, c1:'rgba(139,92,246,0.48)',  c2:'rgba(0,0,0,0)'},
-        {x:0.75, y:0.70, r:0.30, c1:'rgba(236,72,153,0.40)',  c2:'rgba(76,29,149,0.0)'},
-        {x:0.90, y:0.40, r:0.26, c1:'rgba(6,182,212,0.35)',   c2:'rgba(0,0,0,0)'},
-        {x:0.20, y:0.80, r:0.22, c1:'rgba(167,139,250,0.38)', c2:'rgba(0,0,0,0)'},
-        {x:0.65, y:0.50, r:0.35, c1:'rgba(124,58,237,0.32)',  c2:'rgba(0,0,0,0)'},
-        {x:0.45, y:0.15, r:0.24, c1:'rgba(236,72,153,0.30)',  c2:'rgba(0,0,0,0)'}
+        {x:0.08, y:0.35, r:0.45, c1:'rgba(220,60,140,0.70)',  c2:'rgba(100,30,200,0.0)'},
+        {x:0.30, y:0.68, r:0.32, c1:'rgba(0,200,230,0.60)',   c2:'rgba(0,0,0,0)'},
+        {x:0.58, y:0.22, r:0.38, c1:'rgba(130,80,255,0.65)',  c2:'rgba(0,0,0,0)'},
+        {x:0.78, y:0.72, r:0.34, c1:'rgba(236,72,153,0.58)',  c2:'rgba(60,20,130,0.0)'},
+        {x:0.92, y:0.42, r:0.30, c1:'rgba(0,190,220,0.50)',   c2:'rgba(0,0,0,0)'},
+        {x:0.18, y:0.82, r:0.26, c1:'rgba(160,120,255,0.55)', c2:'rgba(0,0,0,0)'},
+        {x:0.68, y:0.52, r:0.40, c1:'rgba(110,40,220,0.48)',  c2:'rgba(0,0,0,0)'},
+        {x:0.48, y:0.12, r:0.28, c1:'rgba(236,72,153,0.45)',  c2:'rgba(0,0,0,0)'},
+        {x:0.50, y:0.50, r:0.55, c1:'rgba(80,20,160,0.38)',   c2:'rgba(0,0,0,0)'}
       ];
       blobs.forEach(function(b) {
-        var bx = b.x * 2048, by = b.y * 1024, br = b.r * 1024;
+        var bx = b.x*2048, by = b.y*1024, br = b.r*1024;
         var g = cx.createRadialGradient(bx, by, 0, bx, by, br);
         g.addColorStop(0, b.c1); g.addColorStop(1, b.c2);
         cx.fillStyle = g; cx.fillRect(0, 0, 2048, 1024);
       });
-      // fine star-dust noise
-      for (var s = 0; s < 1800; s++) {
-        var sx = Math.random()*2048, sy = Math.random()*1024, sr = 0.5 + Math.random()*1.5;
-        var sa = 0.3 + Math.random()*0.7;
+      // stars: bright white + colored
+      for (var s = 0; s < 3200; s++) {
+        var sx = Math.random()*2048, sy = Math.random()*1024;
+        var sr = Math.random() < 0.05 ? 2.5 + Math.random()*2 : 0.5 + Math.random()*1.2;
+        var sa = 0.5 + Math.random()*0.5;
+        var roll = Math.random();
+        var sc2 = roll < 0.08 ? 'rgba(120,220,255,'+sa+')' : roll < 0.15 ? 'rgba(255,150,220,'+sa+')' : 'rgba(255,255,255,'+sa+')';
         cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI*2);
-        cx.fillStyle = 'rgba(255,255,255,' + sa + ')'; cx.fill();
+        cx.fillStyle = sc2; cx.fill();
+        // cross-spike on bright stars
+        if (sr > 2) {
+          cx.strokeStyle = 'rgba(255,255,255,0.3)'; cx.lineWidth = 0.5;
+          cx.beginPath(); cx.moveTo(sx-sr*3,sy); cx.lineTo(sx+sr*3,sy); cx.stroke();
+          cx.beginPath(); cx.moveTo(sx,sy-sr*3); cx.lineTo(sx,sy+sr*3); cx.stroke();
+        }
       }
       var ntex = new THREE.CanvasTexture(cv);
-      var nmat = new THREE.MeshBasicMaterial({ map: ntex, side: THREE.BackSide, transparent: true, opacity: 0.88, depthWrite: false, blending: THREE.AdditiveBlending });
-      galScene.add(new THREE.Mesh(new THREE.SphereGeometry(60, 32, 24), nmat));
+      var nmat = new THREE.MeshBasicMaterial({ map: ntex, side: THREE.BackSide, depthWrite: false });
+      galScene.add(new THREE.Mesh(new THREE.SphereGeometry(65, 48, 32), nmat));
+    })();
+    // background planets
+    (function makePlanets() {
+      var defs = [
+        { pos:[28,-8,-42], r:5.5, c1:'#7c3aed', c2:'#1e0040' },
+        { pos:[-38, 5,-50], r:7.0, c1:'#0e7490', c2:'#001a22' },
+        { pos:[ 22, 20,-48], r:3.8, c1:'#be185d', c2:'#2d0018' }
+      ];
+      defs.forEach(function(d) {
+        var cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;
+        var cx = cv.getContext('2d');
+        var g = cx.createRadialGradient(200,180,20, 256,256,256);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.15, d.c1);
+        g.addColorStop(0.7, d.c2);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        cx.fillStyle = g; cx.fillRect(0,0,512,512);
+        // haze ring
+        var h = cx.createRadialGradient(256,256,220,256,256,300);
+        h.addColorStop(0, 'rgba(255,255,255,0)');
+        h.addColorStop(0.5, d.c1.replace(')',',0.18)').replace('#','rgba(').replace(/([0-9a-f]{2})/gi,function(m){return parseInt(m,16)+','}));
+        h.addColorStop(1, 'rgba(0,0,0,0)');
+        var ptex = new THREE.CanvasTexture(cv);
+        var pmat = new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0.82, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+        var pm = new THREE.Mesh(new THREE.PlaneGeometry(d.r*2, d.r*2), pmat);
+        pm.position.set(d.pos[0], d.pos[1], d.pos[2]);
+        pm.lookAt(0,0,0);
+        galScene.add(pm);
+      });
     })();
 
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
@@ -1853,9 +1893,57 @@
     for (var hi = 0; hi < hits.length; hi++) {
       var o = hits[hi].object;
       while (o && o.userData.shotIdx === undefined) o = o.parent;
-      if (o && o.userData.shotIdx !== undefined) { galTargetProg = o.userData.shotIdx; return; }
+      if (o && o.userData.shotIdx !== undefined) {
+        var idx = o.userData.shotIdx;
+        if (idx === Math.round(galProg)) {
+          // clicked active photo — open lightbox
+          openGalLightbox(o);
+        } else {
+          galTargetProg = idx;
+        }
+        return;
+      }
     }
   }
+
+  // ---- LIGHTBOX ----
+  var galLbEl = null;
+  function openGalLightbox(panel) {
+    var mat = panel.userData.photoMat;
+    if (!mat || !mat.map) return;
+    if (!galLbEl) {
+      galLbEl = document.createElement('div');
+      galLbEl.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,0,15,0);cursor:zoom-out;';
+      galLbEl.innerHTML = '<img style="max-width:92vw;max-height:88vh;border-radius:8px;box-shadow:0 0 80px rgba(167,139,250,0.6),0 0 200px rgba(236,72,153,0.25);transform:scale(0.55);opacity:0;transition:transform 0.45s cubic-bezier(.22,1,.36,1),opacity 0.35s ease;" />';
+      document.body.appendChild(galLbEl);
+    }
+    var img = galLbEl.querySelector('img');
+    // extract image src from THREE texture
+    var src = mat.map.image && (mat.map.image.src || mat.map.image.toDataURL && mat.map.image.toDataURL());
+    if (!src) return;
+    img.src = src;
+    galLbEl.style.background = 'rgba(2,0,15,0)';
+    galLbEl.style.display = 'flex';
+    // force reflow then animate
+    requestAnimationFrame(function() {
+      galLbEl.style.background = 'rgba(2,0,15,0.88)';
+      galLbEl.style.transition = 'background 0.4s ease';
+      img.style.transform = 'scale(1)';
+      img.style.opacity = '1';
+    });
+    galLbEl.onclick = function() { closeGalLightbox(); };
+    window.addEventListener('keydown', galLbKeydown);
+  }
+  function closeGalLightbox() {
+    if (!galLbEl) return;
+    var img = galLbEl.querySelector('img');
+    img.style.transform = 'scale(0.55)';
+    img.style.opacity = '0';
+    galLbEl.style.background = 'rgba(2,0,15,0)';
+    setTimeout(function() { if (galLbEl) galLbEl.style.display = 'none'; }, 420);
+    window.removeEventListener('keydown', galLbKeydown);
+  }
+  function galLbKeydown(e) { if (e.key === 'Escape') closeGalLightbox(); }
 
   if (galleryClose) galleryClose.addEventListener('click', closeGallery);
   window.addEventListener('keydown', function(e) {
