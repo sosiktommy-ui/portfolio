@@ -1247,54 +1247,110 @@
     galTreeGroup = g;
   }
 
-  // canvas texture for AI Voice node cards
+  // canvas texture for AI Voice node cards — dashboard-like module
   function makeNodeTex(label) {
-    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 320;
+    var W = 720, H = 450;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     var cx = cv.getContext('2d');
-    var bg = cx.createLinearGradient(0, 0, 512, 320);
-    bg.addColorStop(0, '#0e0a1a'); bg.addColorStop(1, '#07090f');
-    cx.fillStyle = bg; cx.fillRect(0, 0, 512, 320);
-    var rg = cx.createRadialGradient(256, 160, 0, 256, 160, 230);
-    rg.addColorStop(0, 'rgba(167,139,250,0.22)'); rg.addColorStop(1, 'transparent');
-    cx.fillStyle = rg; cx.fillRect(0, 0, 512, 320);
-    cx.strokeStyle = 'rgba(167,139,250,0.5)'; cx.lineWidth = 1.5;
-    cx.strokeRect(3, 3, 506, 314);
-    [[12,12,1,1],[500,12,-1,1],[12,308,1,-1],[500,308,-1,-1]].forEach(function(q) {
-      cx.beginPath(); cx.moveTo(q[0]+q[2]*20,q[1]); cx.lineTo(q[0],q[1]); cx.lineTo(q[0],q[1]+q[3]*20); cx.stroke();
+    // base gradient
+    var bg = cx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#100925'); bg.addColorStop(0.6, '#0a0716'); bg.addColorStop(1, '#04020c');
+    cx.fillStyle = bg; cx.fillRect(0, 0, W, H);
+    // hex grid faint
+    cx.strokeStyle = 'rgba(167,139,250,0.07)'; cx.lineWidth = 1;
+    for (var gx = 0; gx < W; gx += 24) { cx.beginPath(); cx.moveTo(gx, 0); cx.lineTo(gx, H); cx.stroke(); }
+    for (var gy = 0; gy < H; gy += 24) { cx.beginPath(); cx.moveTo(0, gy); cx.lineTo(W, gy); cx.stroke(); }
+    // radial glow center
+    var rg = cx.createRadialGradient(W/2, H/2-30, 0, W/2, H/2, 360);
+    rg.addColorStop(0, 'rgba(167,139,250,0.32)'); rg.addColorStop(1, 'transparent');
+    cx.fillStyle = rg; cx.fillRect(0, 0, W, H);
+    // outer border
+    cx.strokeStyle = 'rgba(167,139,250,0.55)'; cx.lineWidth = 2;
+    cx.strokeRect(8, 8, W-16, H-16);
+    // corner ticks
+    cx.strokeStyle = 'rgba(196,181,253,0.9)'; cx.lineWidth = 2;
+    [[20,20,1,1],[W-20,20,-1,1],[20,H-20,1,-1],[W-20,H-20,-1,-1]].forEach(function(q) {
+      cx.beginPath();
+      cx.moveTo(q[0]+q[2]*28, q[1]); cx.lineTo(q[0], q[1]); cx.lineTo(q[0], q[1]+q[3]*28);
+      cx.stroke();
     });
-    cx.fillStyle = '#ddd6fe'; cx.font = 'bold 56px monospace'; cx.textAlign = 'center';
-    var lines = label.split('\n'), sy = 180 - (lines.length-1)*34;
-    lines.forEach(function(ln, i) { cx.fillText(ln, 256, sy + i*72); });
-    cx.strokeStyle = 'rgba(255,255,255,0.025)'; cx.lineWidth = 1;
-    for (var y = 0; y < 320; y += 4) { cx.beginPath(); cx.moveTo(0,y); cx.lineTo(512,y); cx.stroke(); }
-    var t = new THREE.CanvasTexture(cv); t.flipY = true; return t;
+    // header bar (left tag)
+    cx.fillStyle = 'rgba(167,139,250,0.18)';
+    cx.fillRect(28, 32, 110, 22);
+    cx.strokeStyle = 'rgba(167,139,250,0.7)'; cx.lineWidth = 1;
+    cx.strokeRect(28, 32, 110, 22);
+    cx.fillStyle = '#ddd6fe'; cx.font = 'bold 11px monospace'; cx.textAlign = 'left'; cx.textBaseline = 'middle';
+    cx.fillText('MODULE · ACTIVE', 36, 43);
+    // status pill (right)
+    cx.fillStyle = 'rgba(126,255,160,0.15)';
+    cx.beginPath(); cx.arc(W-100, 43, 11, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = '#7effa0'; cx.beginPath(); cx.arc(W-100, 43, 4, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = '#a7f3d0'; cx.font = 'bold 11px monospace'; cx.textAlign = 'left';
+    cx.fillText('LIVE', W-82, 43);
+    // big label centered
+    cx.fillStyle = '#ffffff';
+    cx.font = 'bold 64px monospace';
+    cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.shadowColor = 'rgba(167,139,250,0.7)'; cx.shadowBlur = 22;
+    var lines = label.split('\n');
+    var lh = 76;
+    var sy = H/2 - ((lines.length-1) * lh) / 2 - 10;
+    lines.forEach(function(ln, i) { cx.fillText(ln, W/2, sy + i*lh); });
+    cx.shadowBlur = 0;
+    // waveform bars at bottom
+    var bw = 6, bg2 = 4, baseY = H - 60, cnt = Math.floor((W - 80) / (bw + bg2));
+    for (var bi = 0; bi < cnt; bi++) {
+      var hh = 6 + (Math.sin(bi * 0.45) * 0.5 + 0.5) * 28 + (bi % 3 === 0 ? 14 : 0);
+      var grad = cx.createLinearGradient(0, baseY - hh, 0, baseY);
+      grad.addColorStop(0, '#a78bfa'); grad.addColorStop(1, 'rgba(167,139,250,0.2)');
+      cx.fillStyle = grad;
+      cx.fillRect(40 + bi * (bw + bg2), baseY - hh, bw, hh);
+    }
+    // bottom label strip
+    cx.fillStyle = 'rgba(232,236,242,0.55)';
+    cx.font = 'bold 10px monospace'; cx.textAlign = 'left'; cx.textBaseline = 'middle';
+    cx.fillText('VOICE / SIGNAL', 40, H - 24);
+    cx.textAlign = 'right';
+    cx.fillText('CH·01 · 48kHz · 16b', W - 40, H - 24);
+    // scanline overlay
+    cx.fillStyle = 'rgba(255,255,255,0.018)';
+    for (var sl = 0; sl < H; sl += 3) { cx.fillRect(0, sl, W, 1); }
+    var t = new THREE.CanvasTexture(cv); t.flipY = true; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+    return t;
   }
 
-  // build vertical helix (panels spiral DOWN around tree)
-  var galHelixStep = 1.55;     // vertical distance between panels
-  var galHelixRadius = 2.6;    // radius around tree axis
-  var galTargetY = 0;          // target camera Y (driven by wheel)
-  var galCameraY = 0;          // smoothed actual camera Y
-  var galMaxScroll = 0;        // computed = (n-1) * helixStep
+  // build STACK of cards — active in front of camera, neighbours behind it (activetheory-style)
+  var galStepProg = 1;       // logical step = 1 per card
+  var galTargetProg = 0;     // target index float
+  var galProg = 0;           // smoothed actual
+  var galMaxProg = 0;        // = n - 1
+  // legacy holdovers (referenced elsewhere — keep but unused)
+  var galHelixStep = 1;
+  var galHelixRadius = 0;
+  var galTargetY = 0;
+  var galCameraY = 0;
+  var galMaxScroll = 0;
   function buildGalOrbit(sc, shots, textures) {
     var og = new THREE.Group();
     var n = shots.length;
-    galMaxScroll = (n - 1) * galHelixStep;
+    galMaxProg = n - 1;
     shots.forEach(function(s, i) {
-      var angle = i * (Math.PI * 2 / 3.0); // ~120° between consecutive panels — nice spiral
-      var y = -i * galHelixStep;
       var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 1.075), mat);
-      mesh.position.set(Math.sin(angle)*galHelixRadius, y, Math.cos(angle)*galHelixRadius);
-      mesh.lookAt(0, y, 0);
+      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.62), mat);
       var gm = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 1.22), gm);
-      gmesh.position.z = 0.025; mesh.add(gmesh);
+      var gmesh = new THREE.Mesh(new THREE.PlaneGeometry(2.85, 1.85), gm);
+      gmesh.position.z = -0.015;
+      mesh.add(gmesh);
+      // thin frame outline
+      var frameGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(2.62, 1.64));
+      var frameMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0 });
+      var frame = new THREE.LineSegments(frameGeo, frameMat);
+      frame.position.z = 0.005;
+      mesh.add(frame);
       mesh.userData.glowMat = gm;
+      mesh.userData.frameMat = frameMat;
       mesh.userData.shotIdx = i;
       mesh.userData.shotData = s;
-      mesh.userData.baseY = y;
-      mesh.userData.baseAngle = angle;
       og.add(mesh);
     });
     sc.add(og);
@@ -1326,44 +1382,73 @@
       galCamera.aspect = w / h;
       galCamera.updateProjectionMatrix();
     }
-    // tree gets a very gentle scroll-driven sway (no autonomous spinning)
-    if (galTreeGroup) {
-      galTreeGroup.rotation.y = galCameraY * 0.12;
-      if (galParticlesObj) galParticlesObj.rotation.y = -galCameraY * 0.08;
-    }
-    // orbit rotation is DRIVEN BY SCROLL — cards spiral as user descends
-    if (galOrbitGroup) {
-      galOrbitGroup.rotation.y = -galCameraY * 0.55;
-    }
-    // smooth camera descent driven by scroll
-    galCameraY += (galTargetY - galCameraY) * 0.06;
+    // smooth progress
+    galProg += (galTargetProg - galProg) * 0.085;
+    // camera FIXED — active card stays centred on screen
     if (galCamera) {
-      galCamera.position.set(0, galCameraY + 0.6, 5.4);
-      galCamera.lookAt(0, galCameraY - 0.3, 0);
+      galCamera.position.set(0, 0.2, 5.2);
+      galCamera.lookAt(0, 0, 0);
     }
-    // find active panel = closest baseY to current cameraY
+    // tree gently behind, only mild scroll-linked drift (decorative)
+    if (galTreeGroup) {
+      galTreeGroup.rotation.y = galProg * 0.25;
+      if (galParticlesObj) galParticlesObj.rotation.y = -galProg * 0.15;
+    }
+    // arrange each card relative to current progress
     var n = galPanels.length;
     if (n > 0) {
-      var best = 0, bestDist = Infinity;
+      var active = Math.round(galProg);
+      if (active < 0) active = 0; if (active > n-1) active = n-1;
+      setGalActive(active);
       for (var pi = 0; pi < n; pi++) {
-        var d = Math.abs(galPanels[pi].userData.baseY - galCameraY);
-        if (d < bestDist) { bestDist = d; best = pi; }
-      }
-      setGalActive(best);
-      galPanels.forEach(function(p) {
-        var dy = Math.abs(p.userData.baseY - galCameraY);
-        // visibility falloff over ~3.5 units of camera distance
-        var prox = Math.max(0, 1 - dy / 3.0);
-        var targetOp = prox * 0.95 + 0.05;
-        var targetScale = 0.78 + prox * 0.42;
-        p.scale.x += (targetScale - p.scale.x) * 0.08;
-        p.scale.y += (targetScale - p.scale.y) * 0.08;
-        if (p.material) p.material.opacity += (targetOp - p.material.opacity) * 0.08;
-        if (p.userData.glowMat) {
-          var tg = prox > 0.7 ? 0.32 * (prox - 0.7) / 0.3 : 0;
-          p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.08;
+        var p = galPanels[pi];
+        var rel = pi - galProg;            // 0 = centered, >0 = upcoming, <0 = passed
+        var ar  = Math.abs(rel);
+        // position
+        var tx, ty, tz, trY, trZ, ts, top;
+        if (rel >= 0) {
+          // upcoming: drift to the right & deeper
+          tx  =  Math.sin(rel * 0.55) * (1.7 + rel * 0.25);
+          ty  = -rel * 0.20;
+          tz  = -rel * 1.55 - Math.min(rel, 1) * 0.4;
+          trY = -rel * 0.22;
+          trZ =  rel * 0.04;
+          ts  =  Math.max(0.55, 1 - rel * 0.10);
+          top =  Math.max(0, 1 - rel * 0.28);
+        } else {
+          // passed: drift to the left & forward (towards camera) then out
+          var r = -rel;
+          tx  = -Math.sin(r * 0.7) * (1.9 + r * 0.4);
+          ty  =  r * 0.65;
+          tz  =  r * 0.45;                  // come closer to camera then off
+          trY =  r * 0.28;
+          trZ = -r * 0.05;
+          ts  =  Math.max(0.4, 1 - r * 0.18);
+          top =  Math.max(0, 1 - r * 0.55);
         }
-      });
+        // active boost
+        if (ar < 0.5) {
+          var k = 1 - ar * 2; // 0..1 closer to 0 means more centred
+          ts  += 0.04 * k;
+          top  = Math.min(1, top + 0.15 * k);
+        }
+        // lerp position/rotation/scale/opacity
+        p.position.x += (tx - p.position.x) * 0.10;
+        p.position.y += (ty - p.position.y) * 0.10;
+        p.position.z += (tz - p.position.z) * 0.10;
+        p.rotation.y += (trY - p.rotation.y) * 0.10;
+        p.rotation.z += (trZ - p.rotation.z) * 0.10;
+        p.scale.x += (ts - p.scale.x) * 0.10;
+        p.scale.y += (ts - p.scale.y) * 0.10;
+        if (p.material)            p.material.opacity            += (top - p.material.opacity) * 0.10;
+        if (p.userData.frameMat)   p.userData.frameMat.opacity   += (top * 0.6 - p.userData.frameMat.opacity) * 0.10;
+        if (p.userData.glowMat) {
+          var tg = ar < 0.4 ? 0.28 * (1 - ar / 0.4) : 0;
+          p.userData.glowMat.opacity += (tg - p.userData.glowMat.opacity) * 0.10;
+        }
+        // render order: bigger Z drawn first so far cards stay behind
+        p.renderOrder = -tz;
+      }
     }
     galRenderer.render(galScene, galCamera);
   }
@@ -1389,21 +1474,26 @@
     var w = window.innerWidth, h = window.innerHeight;
     galScene = new THREE.Scene();
     galCamera = new THREE.PerspectiveCamera(46, w/h, 0.1, 200);
-    galCameraY = 0; galTargetY = 0;
-    galCamera.position.set(0, 0.6, 5.4);
-    galCamera.lookAt(0, -0.3, 0);
+    galTargetProg = 0; galProg = 0;
+    galCamera.position.set(0, 0.2, 5.2);
+    galCamera.lookAt(0, 0, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
     galRenderer.setClearColor(0x000000, 0);
-    galScene.fog = new THREE.FogExp2(0x03040a, 0.045);
-    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.4));
+    galScene.fog = new THREE.FogExp2(0x03040a, 0.055);
+    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.45));
     var pl = new THREE.PointLight(0x7c3aed, 2.5, 14);
     pl.position.set(0, 1.5, 3.5); galScene.add(pl);
     var pl2 = new THREE.PointLight(0x4c1d95, 1.8, 12);
-    pl2.position.set(0, -6, 2); galScene.add(pl2);
+    pl2.position.set(0, -2, 2); galScene.add(pl2);
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     buildGalTree(galScene);
+    // push tree far behind cards & scale down so it stays decorative
+    if (galTreeGroup) {
+      galTreeGroup.position.set(0, -1.5, -6.5);
+      galTreeGroup.scale.set(0.85, 0.85, 0.85);
+    }
     var shots = data.shots, pending = shots.length;
     function afterLoad() {
       buildGalOrbit(galScene, shots, galLoadedTextures);
@@ -1466,11 +1556,9 @@
   function onGWheel(e) {
     e.preventDefault();
     var delta = e.deltaY || 0;
-    // small, smooth — delta usually ~100 per notch → 0.18 per notch
-    galTargetY -= delta * 0.0018;
-    if (galTargetY > 0.6) galTargetY = 0.6;
-    var minY = -galMaxScroll - 0.6;
-    if (galTargetY < minY) galTargetY = minY;
+    galTargetProg += delta * 0.0025;
+    if (galTargetProg < -0.3) galTargetProg = -0.3;
+    if (galTargetProg > galMaxProg + 0.3) galTargetProg = galMaxProg + 0.3;
   }
   var galTouchY = 0;
   function onGTS(e) { galTouchY = e.touches[0].clientY; }
@@ -1478,20 +1566,23 @@
     if (e.cancelable) e.preventDefault();
     var ty = e.touches[0].clientY;
     var dy = galTouchY - ty;
-    galTargetY -= dy * 0.008;
-    if (galTargetY > 0.6) galTargetY = 0.6;
-    var minY = -galMaxScroll - 0.6;
-    if (galTargetY < minY) galTargetY = minY;
+    galTargetProg += dy * 0.012;
+    if (galTargetProg < -0.3) galTargetProg = -0.3;
+    if (galTargetProg > galMaxProg + 0.3) galTargetProg = galMaxProg + 0.3;
     galTouchY = ty;
   }
-  function onGTE() {}
+  function onGTE() {
+    // snap to nearest
+    galTargetProg = Math.round(galTargetProg);
+    if (galTargetProg < 0) galTargetProg = 0;
+    if (galTargetProg > galMaxProg) galTargetProg = galMaxProg;
+  }
   function onGC(e) {
     if (!galOrbitGroup || !galCamera) return;
     galRaycaster.setFromCamera(new THREE.Vector2((e.clientX/galCanvas.clientWidth)*2-1, -((e.clientY/galCanvas.clientHeight)*2-1)), galCamera);
     var hits = galRaycaster.intersectObjects(galPanels, false);
     if (hits.length && hits[0].object.userData.shotIdx !== undefined) {
-      var idx = hits[0].object.userData.shotIdx;
-      galTargetY = galPanels[idx].userData.baseY;
+      galTargetProg = hits[0].object.userData.shotIdx;
     }
   }
 
@@ -1500,14 +1591,18 @@
     if (!galleryOpen) return;
     if (e.key === 'Escape') { closeGallery(); e.stopImmediatePropagation(); return; }
     if (galPanels.length < 2) return;
-    if (e.key === 'ArrowDown') { galTargetY -= galHelixStep; if (galTargetY < -galMaxScroll - 0.6) galTargetY = -galMaxScroll - 0.6; }
-    if (e.key === 'ArrowUp')   { galTargetY += galHelixStep; if (galTargetY > 0.6) galTargetY = 0.6; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      galTargetProg = Math.min(galMaxProg, Math.round(galTargetProg) + 1);
+    }
+    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft') {
+      galTargetProg = Math.max(0, Math.round(galTargetProg) - 1);
+    }
   });
   if (galPrevBtn) galPrevBtn.addEventListener('click', function() {
-    if (galPanels.length > 1) { galTargetY += galHelixStep; if (galTargetY > 0.6) galTargetY = 0.6; }
+    if (galPanels.length > 1) galTargetProg = Math.max(0, Math.round(galTargetProg) - 1);
   });
   if (galNextBtn) galNextBtn.addEventListener('click', function() {
-    if (galPanels.length > 1) { galTargetY -= galHelixStep; if (galTargetY < -galMaxScroll - 0.6) galTargetY = -galMaxScroll - 0.6; }
+    if (galPanels.length > 1) galTargetProg = Math.min(galMaxProg, Math.round(galTargetProg) + 1);
   });
 
   // -----------------------------------------------------------
@@ -1526,6 +1621,55 @@
     h.setAttribute('tabindex', '0');
     h.addEventListener('click', function() { openGallery(key); });
   });
+
+  // clickable 3D screenshots on main stage — raycaster hit-test
+  (function mainStageClick() {
+    if (!canvas) return;
+    var mainRay = new THREE.Raycaster();
+    var lastDown = { x: 0, y: 0, t: 0 };
+    canvas.addEventListener('pointerdown', function(e) {
+      lastDown.x = e.clientX; lastDown.y = e.clientY; lastDown.t = Date.now();
+    });
+    canvas.addEventListener('pointerup', function(e) {
+      if (galleryOpen) return;
+      var dx = Math.abs(e.clientX - lastDown.x), dy = Math.abs(e.clientY - lastDown.y);
+      var dt = Date.now() - lastDown.t;
+      if (dx > 8 || dy > 8 || dt > 600) return; // it was a drag/long press, not a click
+      var r = canvas.getBoundingClientRect();
+      var nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      var ny = -(((e.clientY - r.top) / r.height) * 2 - 1);
+      mainRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
+      // collect all panel meshes
+      var pool = [];
+      clusters.forEach(function(g) {
+        if (g.userData && g.userData.panels) {
+          g.userData.panels.forEach(function(p) { if (p) pool.push(p); });
+        }
+      });
+      var hits = mainRay.intersectObjects(pool, false);
+      if (hits.length) {
+        var key = hits[0].object.userData.projectKey;
+        if (key) openGallery(key);
+      }
+    });
+    // cursor hover feedback
+    canvas.style.cursor = 'default';
+    canvas.addEventListener('pointermove', function(e) {
+      if (galleryOpen) return;
+      var r = canvas.getBoundingClientRect();
+      var nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      var ny = -(((e.clientY - r.top) / r.height) * 2 - 1);
+      mainRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
+      var pool = [];
+      clusters.forEach(function(g) {
+        if (g.userData && g.userData.panels) {
+          g.userData.panels.forEach(function(p) { if (p) pool.push(p); });
+        }
+      });
+      var hits = mainRay.intersectObjects(pool, false);
+      canvas.style.cursor = hits.length ? 'pointer' : 'default';
+    });
+  })();
 
   // -----------------------------------------------------------
   // 22. STACK META number counters (animate on reveal)
