@@ -1176,8 +1176,8 @@
     var spriteTex = new THREE.CanvasTexture(spriteCv);
     spriteTex.minFilter = THREE.LinearFilter; spriteTex.magFilter = THREE.LinearFilter;
 
-    // 6500 particles forming the column
-    var N = 6500;
+    // 14000 particles forming the column
+    var N = 14000;
     var positions = new Float32Array(N * 3);
     var colors    = new Float32Array(N * 3);
     var sizes     = new Float32Array(N);
@@ -1198,7 +1198,7 @@
       else             { R=c; G=0; B=x; }
       out[o] = R+m; out[o+1] = G+m; out[o+2] = B+m;
     }
-    var H_BOT = -8.0, H_TOP = 7.0;     // vertical extent of column
+    var H_BOT = -11.0, H_TOP = 9.0;    // vertical extent of column
     for (var i = 0; i < N; i++) {
       var y = H_BOT + r01() * (H_TOP - H_BOT);
       // radius profile: narrow at bottom, wider in middle, narrows at top
@@ -1216,7 +1216,7 @@
       else if (roll < 0.20)  hue = 320 + r01() * 25;   // pink
       else                   hue = 260 + r01() * 50;   // violet→magenta
       hsv(hue, 0.75 + r01() * 0.25, 0.8 + r01() * 0.2, colors, i*3);
-      sizes[i]  = 0.08 + r01() * 0.22;
+      sizes[i]  = 0.07 + r01() * 0.35;
       speeds[i] = 0.18 + r01() * 0.6;
       phases[i] = r01() * Math.PI * 2;
       radii[i]  = r;
@@ -1267,6 +1267,19 @@
     var outerM = new THREE.MeshBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
     var outer = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), outerM);
     outer.position.y = H_BOT + 0.4; g.add(outer);
+
+    // glowing horizontal rings along column at regular intervals
+    var ringYs = [-6, -2.5, 1.0, 4.5, 7.5];
+    var ringColors = [0xec4899, 0xa78bfa, 0x67e8f9, 0xa78bfa, 0xec4899];
+    ringYs.forEach(function(ry, ri) {
+      var rmat = new THREE.MeshBasicMaterial({ color: ringColors[ri], transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.035, 8, 72), rmat);
+      ring.position.y = ry; g.add(ring);
+      // outer glow halo
+      var haloMat = new THREE.MeshBasicMaterial({ color: ringColors[ri], transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      var halo = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.12, 8, 72), haloMat);
+      halo.position.y = ry; g.add(halo);
+    });
 
     sc.add(g);
     galTreeGroup = g;
@@ -1368,10 +1381,10 @@
     var n = shots.length;
     galMaxProg = n - 1;
     // HELIX / SPIRAL — each photo descends AND rotates around the column
-    var spiralR        = 4.5;
-    var spiralAngStep  = (Math.PI * 2) / 3.2;   // ~113 deg apart — 3 photos per turn
-    var spiralYStep    = 0.90;                   // 0.9 units lower per photo
-    var spiralStartY   = 1.4;
+    var spiralR        = 3.8;
+    var spiralAngStep  = (Math.PI * 2) / 3.0;   // 120 deg apart — exactly 3 per turn
+    var spiralYStep    = 0.60;                   // 0.6 units lower per photo (tight helix)
+    var spiralStartY   = 1.2;
     shots.forEach(function(s, i) {
       var theta = i * spiralAngStep;
       var y     = spiralStartY - i * spiralYStep;
@@ -1393,7 +1406,7 @@
       grp.add(bezel);
 
       // photo plane
-      var mat = new THREE.MeshBasicMaterial({ map: textures[i], transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      var mat = new THREE.MeshBasicMaterial({ map: textures[i], color: 0xd8d8d8, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.85), mat);
       grp.add(mesh);
 
@@ -1467,32 +1480,32 @@
     galProg += (galTargetProg - galProg) * 0.085;
     var n = galPanels.length;
 
-    // ----- camera: spiral-follow — orbit angle AND height track the active photo -----
-    var slowDrift  = now * 0.00006;
-    // spiral: camera angle follows helix angle of active photo
-    var activeIdxF = Math.max(0, Math.min(n - 1, galProg));
-    var spiralAngStep = (Math.PI * 2) / 3.2;
-    var spiralYStep   = 0.90;
-    var spiralStartY  = 1.4;
-    var activeTheta   = activeIdxF * spiralAngStep;
+    // ----- SPIRAL DESCENT CAMERA -----
+    // Each photo scroll step = 120deg rotation + descent (like Secret Sky / helix fly-through)
+    var slowDrift  = now * 0.000035;
+    // helix params MUST match buildGalOrbit
+    var spiralAngStep = (Math.PI * 2) / 3.0;   // 120 deg per photo
+    var spiralYStep   = 0.60;
+    var spiralStartY  = 1.2;
+    var activeIdxF = Math.max(0, Math.min(n > 0 ? n - 1 : 0, galProg));
     var activePhotoY  = spiralStartY - activeIdxF * spiralYStep;
-    // camera sits opposite the active photo (+ half turn) so it looks inward at it
-    galCamAngTgt = -(activeTheta) + Math.PI + slowDrift;
-    galCamAng += (galCamAngTgt - galCamAng) * 0.07;
+    // camera CONTINUOUSLY rotates: +120 deg per photo scrolled
+    // photos are at angle i*spiralAngStep, camera is on opposite side (+PI) looking inward
+    galCamAngTgt = galProg * spiralAngStep + Math.PI + slowDrift;
+    galCamAng += (galCamAngTgt - galCamAng) * 0.055;
     var camX = Math.cos(galCamAng) * galCamRadius;
     var camZ = Math.sin(galCamAng) * galCamRadius;
-    // height: camera descends with spiral, hovering slightly above active photo
-    var camYTarget = activePhotoY + 1.5;
-    galCamHeight += (camYTarget - galCamHeight) * 0.05;
-    // mouse parallax on top
-    var pY = galCamHeight + galMouseY * -0.6;
-    var pX = camX + galMouseX * 0.4;
+    // camera descends WITH the helix
+    var camYTarget = activePhotoY + 2.0;
+    galCamHeight += (camYTarget - galCamHeight) * 0.04;
+    // mouse adds subtle sway
+    var pY = galCamHeight + galMouseY * -0.55;
+    var pX = camX + galMouseX * 0.35;
     if (galCamera) {
-      galCamera.position.x += (pX - galCamera.position.x) * 0.08;
-      galCamera.position.y += (pY - galCamera.position.y) * 0.08;
-      galCamera.position.z += (camZ - galCamera.position.z) * 0.08;
-      // look toward active photo height for natural framing
-      galCamera.lookAt(0, activePhotoY, 0);
+      galCamera.position.x += (pX - galCamera.position.x) * 0.07;
+      galCamera.position.y += (pY - galCamera.position.y) * 0.07;
+      galCamera.position.z += (camZ - galCamera.position.z) * 0.07;
+      galCamera.lookAt(0, activePhotoY + 0.3, 0);
     }
 
     // ----- column particles: rise & wrap, gentle horizontal sway -----
@@ -1513,7 +1526,16 @@
       }
     }
     if (galTreeGroup) {
-      galTreeGroup.rotation.y = now * 0.00012;
+      // counter-rotate entire tree slowly, rings will appear to spin
+      galTreeGroup.rotation.y = now * 0.00018;
+      // spin individual rings faster, alternating direction
+      var kids = galTreeGroup.children;
+      for (var ki = 0; ki < kids.length; ki++) {
+        if (kids[ki].geometry && kids[ki].geometry.type === 'TorusGeometry') {
+          kids[ki].rotation.y = now * (ki % 2 === 0 ? 0.00065 : -0.00055);
+          kids[ki].rotation.z = Math.sin(now * 0.0003 + ki) * 0.12;
+        }
+      }
     }
 
     // ----- photos: helix positions, face camera, focus active -----
@@ -1526,29 +1548,29 @@
         var p = galPanels[i];
         var d2 = i - galProg;
         var ad = Math.abs(d2);
-        var focus = Math.max(0, 1 - ad * 0.55); // 1 at active, 0 by ~1.8 away
-        // gentle bob — small vertical oscillation on top of helix position
-        var bob = Math.sin(now * 0.001 + i) * 0.07;
+        var focus = Math.max(0, 1 - ad * 0.50); // 1 at active, 0 by ~2 away
+        // gentle bob
+        var bob = Math.sin(now * 0.0009 + i * 1.2) * 0.06;
         p.position.y += ((p.userData.baseY + bob) - p.position.y) * 0.05;
-        // active photo: pulled slightly toward camera
-        var pullR = p.userData.baseR - focus * 0.4;
+        // active photo: pulled slightly toward camera for zoom-in feel
+        var pullR = p.userData.baseR - focus * 0.45;
         var theta = p.userData.baseTheta;
         var tx = Math.cos(theta) * pullR;
         var tz = Math.sin(theta) * pullR;
-        p.position.x += (tx - p.position.x) * 0.06;
-        p.position.z += (tz - p.position.z) * 0.06;
-        // face camera
+        p.position.x += (tx - p.position.x) * 0.07;
+        p.position.z += (tz - p.position.z) * 0.07;
+        // always face camera so photos look like floating screens
         var tmp = new THREE.Object3D();
         tmp.position.copy(p.position);
         tmp.lookAt(camPos);
-        p.quaternion.slerp(tmp.quaternion, 0.10);
-        // scale — active slightly larger, far ones smaller
-        var ts  = 0.72 + focus * 0.38;
-        // opacity — far photos fade but stay visible so you can see the spiral
-        var top = Math.max(0.15, 0.85 - ad * 0.25);
-        var tgl = focus > 0.35 ? (focus - 0.35) * 0.7 : 0;
-        var tfr = 0.20 + focus * 0.80;
-        var tbz = 0.40 + focus * 0.50;
+        p.quaternion.slerp(tmp.quaternion, 0.09);
+        // scale — active bigger, far ones smaller but still visible
+        var ts  = 0.65 + focus * 0.45;   // 0.65 (far) .. 1.10 (active)
+        // photo opacity — keep distant ones visible so you can see the helix
+        var top = Math.max(0.30, 0.92 - ad * 0.22);
+        var tgl = focus > 0.3 ? (focus - 0.3) * 0.55 : 0;
+        var tfr = 0.18 + focus * 0.82;
+        var tbz = 0.35 + focus * 0.55;
         p.scale.x += (ts - p.scale.x) * 0.10;
         p.scale.y += (ts - p.scale.y) * 0.10;
         p.scale.z += (ts - p.scale.z) * 0.10;
@@ -1556,7 +1578,7 @@
         if (p.userData.frameMat) p.userData.frameMat.opacity += (tfr - p.userData.frameMat.opacity) * 0.10;
         if (p.userData.glowMat)  p.userData.glowMat.opacity  += (tgl - p.userData.glowMat.opacity) * 0.10;
         if (p.userData.bezelMat) p.userData.bezelMat.opacity += (tbz - p.userData.bezelMat.opacity) * 0.10;
-        p.renderOrder = 10 - ad * ad;
+        p.renderOrder = 10 - Math.round(ad * ad);
       }
     }
     if (galComposer) galComposer.render(); else galRenderer.render(galScene, galCamera);
@@ -1585,13 +1607,14 @@
     galCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 200);
     galTargetProg = 0; galProg = 0;
     galCamAng = 0; galCamAngTgt = 0;
+    galCamHeight = 3.2;  // start above spiral top
     galCamera.position.set(0, galCamHeight, galCamRadius);
     galCamera.lookAt(0, 0, 0);
     galRenderer = new THREE.WebGLRenderer({ canvas: galCanvas, antialias: true, alpha: true });
     galRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     galRenderer.setSize(w, h, false);
     galRenderer.setClearColor(0x000000, 0);
-    galScene.fog = new THREE.FogExp2(0x04030a, 0.030);
+    galScene.fog = new THREE.FogExp2(0x02010a, 0.022);
 
     // postprocess: real UnrealBloom if available, otherwise skip (additive glow alone)
     galComposer = null; galBloomPass = null;
@@ -1613,17 +1636,20 @@
         galComposer = null;
       }
     }
-    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.45));
-    var pl = new THREE.PointLight(0xec4899, 2.5, 18);
+    galScene.add(new THREE.AmbientLight(0xa78bfa, 0.55));
+    var pl = new THREE.PointLight(0xec4899, 3.0, 22);
     pl.position.set(0, 2.5, 4); galScene.add(pl);
-    var pl2 = new THREE.PointLight(0x06b6d4, 1.6, 16);
+    var pl2 = new THREE.PointLight(0x06b6d4, 2.2, 20);
     pl2.position.set(2, -2, -2); galScene.add(pl2);
-    var pl3 = new THREE.PointLight(0xa78bfa, 1.8, 14);
+    var pl3 = new THREE.PointLight(0xa78bfa, 2.4, 18);
     pl3.position.set(-3, 1, 3); galScene.add(pl3);
+    // extra rim light from above
+    var pl4 = new THREE.PointLight(0x7c3aed, 1.8, 24);
+    pl4.position.set(0, 8, 0); galScene.add(pl4);
 
-    // starfield backdrop — multi-color (magenta + cyan accents)
+    // starfield backdrop — multi-color (magenta + cyan accents), denser
     (function starfield() {
-      var sc = 1800, sp = new Float32Array(sc*3), sclr = new Float32Array(sc*3), ss = 9001;
+      var sc = 2800, sp = new Float32Array(sc*3), sclr = new Float32Array(sc*3), ss = 9001;
       for (var i = 0; i < sc; i++) {
         ss = (ss*1664525+1013904223)&0xffffffff; var u = (ss>>>0)/4294967295;
         ss = (ss*1664525+1013904223)&0xffffffff; var v = (ss>>>0)/4294967295;
@@ -1631,46 +1657,62 @@
         ss = (ss*1664525+1013904223)&0xffffffff; var cc = (ss>>>0)/4294967295;
         var th = u * Math.PI * 2;
         var ph = Math.acos(2*v - 1);
-        var r  = 35 + d * 30;
+        var r  = 32 + d * 35;
         sp[i*3]   = r * Math.sin(ph) * Math.cos(th);
         sp[i*3+1] = r * Math.cos(ph);
         sp[i*3+2] = r * Math.sin(ph) * Math.sin(th);
-        if (cc < 0.08)      { sclr[i*3]=0.4; sclr[i*3+1]=0.95; sclr[i*3+2]=1.0; } // cyan
-        else if (cc < 0.16) { sclr[i*3]=1.0; sclr[i*3+1]=0.45; sclr[i*3+2]=0.85; } // pink
+        if (cc < 0.10)      { sclr[i*3]=0.4; sclr[i*3+1]=0.95; sclr[i*3+2]=1.0; } // cyan
+        else if (cc < 0.20) { sclr[i*3]=1.0; sclr[i*3+1]=0.45; sclr[i*3+2]=0.85; } // pink
         else                { sclr[i*3]=1;   sclr[i*3+1]=1;    sclr[i*3+2]=1; }
       }
       var sgeo = new THREE.BufferGeometry();
       sgeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
       sgeo.setAttribute('color',    new THREE.BufferAttribute(sclr, 3));
-      var smat = new THREE.PointsMaterial({ vertexColors: true, size: 0.14, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+      var smat = new THREE.PointsMaterial({ vertexColors: true, size: 0.16, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
       galScene.add(new THREE.Points(sgeo, smat));
     })();
 
-    // double nebula (magenta near + cyan far)
-    function nebPlane(z, hue1, hue2, alpha) {
+    // deep background: glowing hex-grid floor (extends vertically as camera descends)
+    (function gridFloor() {
+      var cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;
+      var cx = cv.getContext('2d');
+      cx.clearRect(0, 0, 512, 512);
+      cx.strokeStyle = 'rgba(167,139,250,0.18)'; cx.lineWidth = 1;
+      for (var gx = 0; gx < 512; gx += 28) { cx.beginPath(); cx.moveTo(gx, 0); cx.lineTo(gx, 512); cx.stroke(); }
+      for (var gy = 0; gy < 512; gy += 28) { cx.beginPath(); cx.moveTo(0, gy); cx.lineTo(512, gy); cx.stroke(); }
+      var gt = new THREE.CanvasTexture(cv);
+      gt.wrapS = gt.wrapT = THREE.RepeatWrapping; gt.repeat.set(4, 24);
+      var gm = new THREE.MeshBasicMaterial({ map: gt, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
+      var gp = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 30, 32, 1, true), gm);
+      gp.position.y = -4; galScene.add(gp);
+    })();
+
+    // rich nebula background
+    function nebPlane(z, hue1, hue2, alpha, ySeed) {
       var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 1024;
       var cx = cv.getContext('2d');
-      var bg = cx.createRadialGradient(512, 512, 80, 512, 512, 600);
+      var bg = cx.createRadialGradient(512, 512, 60, 512, 512, 580);
       bg.addColorStop(0, hue1);
       bg.addColorStop(0.5, hue2);
       bg.addColorStop(1, 'rgba(0,0,0,0)');
       cx.fillStyle = bg; cx.fillRect(0, 0, 1024, 1024);
-      for (var k = 0; k < 60; k++) {
+      for (var k = 0; k < 80; k++) {
         var bx = Math.random()*1024, by = Math.random()*1024;
-        var br = 30 + Math.random()*140;
+        var br = 40 + Math.random()*160;
         var rg = cx.createRadialGradient(bx, by, 0, bx, by, br);
-        rg.addColorStop(0, 'rgba(220,200,255,' + (0.08 + Math.random()*0.10) + ')');
+        rg.addColorStop(0, 'rgba(220,200,255,' + (0.06 + Math.random()*0.12) + ')');
         rg.addColorStop(1, 'rgba(220,200,255,0)');
         cx.fillStyle = rg; cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI*2); cx.fill();
       }
       var ntex = new THREE.CanvasTexture(cv);
       var nmat = new THREE.MeshBasicMaterial({ map: ntex, transparent: true, opacity: alpha, depthWrite: false, blending: THREE.AdditiveBlending });
-      var np = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), nmat);
-      np.position.set(0, 0, z);
+      var np = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), nmat);
+      np.position.set(0, ySeed || 0, z);
       galScene.add(np);
     }
-    nebPlane(-18, 'rgba(236,72,153,0.45)', 'rgba(124,58,237,0.22)', 0.8);
-    nebPlane(-26, 'rgba(6,182,212,0.30)',  'rgba(76,29,149,0.10)',  0.55);
+    nebPlane(-20, 'rgba(236,72,153,0.55)', 'rgba(124,58,237,0.28)', 0.85, 0);
+    nebPlane(-28, 'rgba(6,182,212,0.40)',  'rgba(76,29,149,0.15)',  0.65, -5);
+    nebPlane(-18, 'rgba(139,92,246,0.35)', 'rgba(236,72,153,0.12)', 0.50, -10);
 
     galOrbitGroup = null; galPanels = []; galActiveIdx = 0; galLoadedTextures = [];
     galColumnData = null; galParticlesObj = null; galTreeGroup = null;
