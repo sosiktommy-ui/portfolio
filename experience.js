@@ -204,6 +204,7 @@
           t.magFilter = THREE.LinearFilter;
           t.generateMipmaps = false;
           t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+          t.flipY = true;
           if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding;
           resolve(t);
         },
@@ -214,7 +215,9 @@
           var ctx = c.getContext('2d');
           ctx.fillStyle = '#222';
           ctx.fillRect(0,0,4,4);
-          resolve(new THREE.CanvasTexture(c));
+          var ft = new THREE.CanvasTexture(c);
+          ft.flipY = true;
+          resolve(ft);
         }
       );
     });
@@ -272,8 +275,8 @@
         ' float aaw = fwidth(d);',
         ' float maskInside = 1.0 - smoothstep(0.0, aaw*1.5, d);',
         ' if (maskInside <= 0.001) discard;',
-        // tex sample (uv y flipped because image)
-        ' vec4 t = texture2D(uTex, vec2(vUv.x, 1.0 - vUv.y));',
+        // tex sample — textures use flipY=true so sample uv directly
+        ' vec4 t = texture2D(uTex, vUv);',
         ' vec3 col = t.rgb;',
         // mild tint multiply
         ' col = mix(col, col * uTint, 0.20);',
@@ -294,6 +297,7 @@
     });
     var mesh = new THREE.Mesh(geo, mat);
     mesh.userData.panelMat = mat;
+    mesh.userData.isPanel = true;
     mesh.renderOrder = 10;
     return mesh;
   }
@@ -489,6 +493,8 @@
         panel.userData.basePos = panel.position.clone();
         panel.userData.baseRot = { x: 0, y: p[3], z: p[4] };
         panel.userData.floatPhase = Math.random() * Math.PI * 2;
+        panel.userData.projectKey = project.key;
+        panel.userData.imgIdx = i;
         group.add(panel);
         panels.push(panel);
 
@@ -512,6 +518,8 @@
         panel.userData.basePos = panel.position.clone();
         panel.userData.baseRot = { x: 0, y: p[3], z: p[4] };
         panel.userData.floatPhase = Math.random() * Math.PI * 2;
+        panel.userData.projectKey = project.key;
+        panel.userData.imgIdx = idx;
         group.add(panel);
         panels[idx] = panel;
       });
@@ -562,6 +570,7 @@
 
     var t = new THREE.CanvasTexture(c);
     t.minFilter = THREE.LinearFilter;
+    t.flipY = true;
     return t;
   }
 
@@ -939,5 +948,228 @@
   clustersReady.then(function () {
     updateScrollState();
   });
+
+  // -----------------------------------------------------------
+  // 20. PROJECT GALLERY (click-to-zoom into scrollable feed)
+  // -----------------------------------------------------------
+  var GALLERY_DATA = {
+    ticketing: {
+      eyebrowNum: '/ 01',
+      title: 'Event Ticketing & QR Access',
+      sub: 'Full-cycle ticketing platform: QR generation, scanner-safe access, admin control, search, analytics and live maps — configured for 75 club locations across 22 countries.',
+      meta: [['75','Club locations'],['22','Countries'],['E2E','Full-stack']],
+      shots: [
+        ['ticketing-dashboard.jpg','01 / OPERATIONS','Operations dashboard','Top-level view of issuance, scanner load, anomalies and venue health.'],
+        ['ticketing-analytics-overview.jpg','02 / ANALYTICS','Analytics overview','Cross-venue rollups, conversion funnels, time-of-day patterns and aggregates.'],
+        ['ticketing-charts.jpg','03 / CHARTS','Detailed charts','Per-event series — entries, scans, no-shows — with comparable baselines.'],
+        ['ticketing-map.jpg','04 / GEO LAYER','Live geographic map','Country and city distribution; quick context switching across markets.'],
+        ['ticketing-search.jpg','05 / SEARCH','Cross-event search','Find a specific guest, ticket or order across the entire venue network.'],
+        ['ticketing-segmentation.jpg','06 / SEGMENTS','Segmentation slice','Filter and group by audience traits to inform marketing decisions.'],
+        ['scanner.jpg','07 / SCANNER','Scanner-side surface','Door-side scan UX — isolated from backoffice so it never blocks entry.']
+      ]
+    },
+    taskcontrol: {
+      eyebrowNum: '/ 02',
+      title: 'Task Control & Team Ops',
+      sub: 'Operational layer for recurring event work — roles, tasks, archives and synced state across mobile and desktop.',
+      meta: [['5+','Role layers'],['∞','Recurring events'],['1','Unified ops']],
+      shots: [
+        ['task-control-dashboard.jpg','01 / OVERVIEW','Operations dashboard','Daily situational view: load, status, attention and outliers.'],
+        ['task-control-events-board.jpg','02 / EVENTS','Events board','Active and upcoming events with state, ownership and progress.'],
+        ['task-control-tasks.jpg','03 / TASKS','Task pipeline','Concrete deliverables — assignment, deadline, status, notes.'],
+        ['task-control-events-list.jpg','04 / EVENT LIST','Event list view','Searchable directory with filters by venue, type and time.'],
+        ['task-control-users.jpg','05 / ROLES','Team & roles','User registry — roles, scopes, access boundaries.'],
+        ['task-control-archive.jpg','06 / ARCHIVE','Archive view','Historic event data — searchable, exportable, audit-friendly.'],
+        ['task-control-bot-settings.jpg','07 / AUTOMATION','Bot & sync settings','Notification rules, automation triggers, sync targets.']
+      ]
+    },
+    aivoice: {
+      eyebrowNum: '/ 03',
+      title: 'AI Voice Auto-Responder',
+      sub: 'Inbound voice automation handled as a product flow — parser, cached venue state, business rules and operator fallbacks.',
+      meta: [['24/7','Answering'],['~1s','Cache hit'],['Live','Venue sync']],
+      shots: []
+    }
+  };
+
+  function gImg(name) { return './assets/screens/' + name; }
+
+  var galleryEl     = document.getElementById('xp-gallery');
+  var galleryScroll = document.getElementById('xp-gallery-scroll');
+  var galleryClose  = document.getElementById('xp-gallery-close');
+  var galStackEl    = document.getElementById('xp-gal-stack');
+  var galTitleEl    = document.getElementById('xp-gal-title');
+  var galSubEl      = document.getElementById('xp-gal-sub');
+  var galMetaEl     = document.getElementById('xp-gal-meta');
+  var galEbNum      = document.getElementById('xp-gal-eb-num');
+  var galChip       = document.getElementById('xp-gal-chip');
+
+  var galleryObserver = null;
+  var galleryOpen = false;
+
+  function openGallery(projectKey) {
+    var data = GALLERY_DATA[projectKey];
+    if (!data || galleryOpen || !galleryEl) return;
+    galleryOpen = true;
+
+    if (galEbNum)   galEbNum.textContent   = data.eyebrowNum;
+    if (galTitleEl) galTitleEl.textContent = data.title;
+    if (galSubEl)   galSubEl.textContent   = data.sub;
+
+    if (galMetaEl) {
+      galMetaEl.innerHTML = '';
+      data.meta.forEach(function (m) {
+        var c = document.createElement('div'); c.className = 'xp-gal-meta-cell';
+        var n = document.createElement('span'); n.className = 'xp-meta-num'; n.textContent = m[0];
+        var l = document.createElement('span'); l.className = 'xp-meta-lbl'; l.textContent = m[1];
+        c.appendChild(n); c.appendChild(l); galMetaEl.appendChild(c);
+      });
+    }
+
+    galStackEl.innerHTML = '';
+    if (data.shots.length === 0) {
+      var note = document.createElement('div');
+      note.className = 'xp-gal-fig';
+      note.innerHTML = '<div class="xp-gal-fig-frame" style="padding:80px 60px;text-align:center;"><h3 style="font-family:var(--xp-sans);font-weight:300;font-size:clamp(28px,4vw,42px);color:var(--xp-fg);margin:0 0 18px;">Voice-first surface</h3><p style="color:var(--xp-fg-dim);max-width:62ch;margin:0 auto;line-height:1.7;">Visual proofs for this build are intentionally minimal — value lives in the call flow, business rules and fallback chain. Audio walkthrough available on request.</p></div>';
+      galStackEl.appendChild(note);
+    } else {
+      data.shots.forEach(function (s, idx) {
+        var fig = document.createElement('figure');
+        fig.className = 'xp-gal-fig';
+        fig.style.transitionDelay = (Math.min(idx, 6) * 0.04) + 's';
+        fig.innerHTML =
+          '<div class="xp-gal-fig-frame">' +
+            '<span class="xp-c xp-c-tl"></span>' +
+            '<span class="xp-c xp-c-tr"></span>' +
+            '<span class="xp-c xp-c-bl"></span>' +
+            '<span class="xp-c xp-c-br"></span>' +
+            '<img loading="lazy" src="' + gImg(s[0]) + '" alt="' + s[2] + '">' +
+          '</div>' +
+          '<figcaption class="xp-gal-fig-cap">' +
+            '<span class="xp-gal-fig-num">' + s[1] + '</span>' +
+            '<div class="xp-gal-fig-body"><h3>' + s[2] + '</h3><p>' + s[3] + '</p></div>' +
+          '</figcaption>';
+        galStackEl.appendChild(fig);
+      });
+    }
+
+    if (galChip) galChip.textContent = 'FRAME 00 / ' + String(data.shots.length || 1).padStart(2, '0');
+
+    galleryEl.classList.add('is-open');
+    galleryEl.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (galleryScroll) galleryScroll.scrollTop = 0;
+
+    if (galleryObserver) galleryObserver.disconnect();
+    galleryObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-in');
+          var idx = Array.prototype.indexOf.call(galStackEl.children, e.target) + 1;
+          var total = galStackEl.children.length;
+          if (galChip) galChip.textContent = 'FRAME ' + String(idx).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+        }
+      });
+    }, { root: galleryScroll, threshold: 0.18, rootMargin: '-10% 0px -10% 0px' });
+    Array.prototype.forEach.call(galStackEl.children, function (c) { galleryObserver.observe(c); });
+
+    if (typeof fadeAudio === 'function') fadeAudio(0.18, 0.8);
+  }
+
+  function closeGallery() {
+    if (!galleryOpen || !galleryEl) return;
+    galleryOpen = false;
+    galleryEl.classList.remove('is-open');
+    galleryEl.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (galleryObserver) { galleryObserver.disconnect(); galleryObserver = null; }
+    if (typeof fadeAudio === 'function' && !audioMuted) fadeAudio(0.35, 1.0);
+  }
+
+  if (galleryClose) galleryClose.addEventListener('click', closeGallery);
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && galleryOpen) { closeGallery(); e.stopImmediatePropagation(); }
+  });
+
+  // -----------------------------------------------------------
+  // 21. RAYCASTER — click 3D panel to open its gallery
+  // -----------------------------------------------------------
+  var raycaster = new THREE.Raycaster();
+  var ndc = new THREE.Vector2();
+
+  function panelUnderPointer(e) {
+    var rect = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+    ndc.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    var meshes = [];
+    clusters.forEach(function (cl) {
+      if (cl.userData.panels) cl.userData.panels.forEach(function (p) { if (p) meshes.push(p); });
+    });
+    var hits = raycaster.intersectObjects(meshes, false);
+    for (var i = 0; i < hits.length; i++) {
+      var m = hits[i].object;
+      var mat = m.userData.panelMat;
+      if (mat && mat.uniforms.uOpacity.value > 0.25) return m;
+    }
+    return null;
+  }
+
+  renderer.domElement.style.pointerEvents = 'auto';
+  renderer.domElement.addEventListener('mousemove', function (e) {
+    if (galleryOpen) return;
+    var m = panelUnderPointer(e);
+    document.body.classList.toggle('is-hover-panel', !!m);
+  });
+  renderer.domElement.addEventListener('click', function (e) {
+    if (galleryOpen) return;
+    var m = panelUnderPointer(e);
+    if (m && m.userData.projectKey) openGallery(m.userData.projectKey);
+  });
+
+  // headings also open gallery
+  var SEC_TO_KEY = { 1: 'ticketing', 2: 'taskcontrol', 3: 'aivoice' };
+  document.querySelectorAll('.xp-proj-h2').forEach(function (h) {
+    var secEl = h.closest('.xp-sec');
+    var sec = secEl ? parseInt(secEl.getAttribute('data-sec'), 10) : -1;
+    var key = SEC_TO_KEY[sec];
+    if (!key) return;
+    h.style.cursor = 'pointer';
+    h.setAttribute('role', 'button');
+    h.setAttribute('tabindex', '0');
+    h.addEventListener('click', function () { openGallery(key); });
+    h.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openGallery(key); } });
+  });
+
+  // -----------------------------------------------------------
+  // 22. STACK META number counters (animate on reveal)
+  // -----------------------------------------------------------
+  var counterInited = false;
+  function initCounters() {
+    if (counterInited) return;
+    counterInited = true;
+    document.querySelectorAll('.xp-meta-num[data-count]').forEach(function (el) {
+      var raw = el.getAttribute('data-count');
+      var to = parseFloat(raw) || 0;
+      var pad = raw.length;
+      var dur = 1400 + Math.random() * 400;
+      var start = performance.now();
+      function step(now) {
+        var t = Math.min(1, (now - start) / dur);
+        var eased = 1 - Math.pow(1 - t, 3);
+        var v = Math.round(to * eased);
+        el.textContent = String(v).padStart(pad, '0');
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  var stackSec = document.getElementById('sec-4');
+  if (stackSec && 'IntersectionObserver' in window) {
+    var co = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { initCounters(); co.disconnect(); } });
+    }, { threshold: 0.35 });
+    co.observe(stackSec);
+  }
 
 })();
