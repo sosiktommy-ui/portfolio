@@ -743,9 +743,11 @@
   }
 
   // -----------------------------------------------------------
-  // 10. Build all clusters (async)
+  // 10. Build all clusters (async) — skipped on mobile (too chaotic on narrow portrait screens)
   // -----------------------------------------------------------
-  var clustersReady = Promise.all(PROJECTS.map(buildClusterFor));
+  var clustersReady = IS_MOBILE
+    ? Promise.resolve([])
+    : Promise.all(PROJECTS.map(buildClusterFor));
 
   // -----------------------------------------------------------
   // 11. Camera scroll system
@@ -1644,7 +1646,9 @@
         // scale — active bigger, far ones smaller
         var ts  = 0.65 + focus * 0.45;   // 0.65 (far) .. 1.10 (active)
         // photo opacity: distance-based * side-visibility (0 when behind column)
-        var distOp = Math.max(0, 0.92 - ad * 0.28);
+        var distOp = IS_MOBILE
+          ? Math.max(0, 0.92 - ad * 0.72)   // mobile: only active+1 visible
+          : Math.max(0, 0.92 - ad * 0.28);  // desktop: soft fall-off
         var top = distOp * sideFactor;
         var tgl = focus > 0.3 ? (focus - 0.3) * 0.55 * sideFactor : 0;
         var tfr = (0.18 + focus * 0.82) * sideFactor;
