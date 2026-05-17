@@ -961,59 +961,116 @@
   var audioCtx = null;
   var masterGain = null;
   var audioMuted = false;
+  var _sparkleTimer = null;
   function buildAudio() {
     if (audioCtx) return;
     try {
       var Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
       audioCtx = new Ctx();
+      var sr = audioCtx.sampleRate;
+
+      // Compressor — keeps everything smooth, no harsh peaks
+      var comp = audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -20;
+      comp.knee.value = 20;
+      comp.ratio.value = 6;
+      comp.attack.value = 0.010;
+      comp.release.value = 0.40;
+
       masterGain = audioCtx.createGain();
       masterGain.gain.value = 0.0001;
-      masterGain.connect(audioCtx.destination);
+      masterGain.connect(comp);
+      comp.connect(audioCtx.destination);
 
-      // soft reverb-ish lowpass tail using delay feedback
-      var lp = audioCtx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 1100;
-      lp.Q.value = 0.6;
-      lp.connect(masterGain);
+      // Reverb — feedback delay network: warm tail, no harsh reflections
+      var revDelay = audioCtx.createDelay(3.0);
+      revDelay.delayTime.value = 1.8;
+      var revFb = audioCtx.createGain();
+      revFb.gain.value = 0.38;
+      var revLp = audioCtx.createBiquadFilter();
+      revLp.type = 'lowpass'; revLp.frequency.value = 1400; revLp.Q.value = 0.4;
+      var revWet = audioCtx.createGain();
+      revWet.gain.value = 0.28;
+      // delay chain: input → revDelay → revLp → revFb → revDelay (loop) + revWet → masterGain
+      revLp.connect(revFb); revFb.connect(revDelay);
+      revLp.connect(revWet); revWet.connect(masterGain);
 
-      // three slowly-detuned sine pads
-      var freqs = [55, 82.5, 110, 138.59, 165];
-      freqs.forEach(function (f, i) {
+      // Pad bus → both dry and reverb
+      var padBus = audioCtx.createGain();
+      padBus.gain.value = 1.0;
+      var dryLp = audioCtx.createBiquadFilter();
+      dryLp.type = 'lowpass'; dryLp.frequency.value = 600; dryLp.Q.value = 0.3;
+      dryLp.connect(masterGain);   // dry
+      dryLp.connect(revDelay);     // into reverb input
+      padBus.connect(dryLp);
+
+      // Pure SINE pad — Am chord: A2 E3 A3 C#4 E4  (smooth, no buzz)
+      var padFreqs  = [110, 164.8, 220, 277.2, 329.6];
+      var padVols   = [0.032, 0.026, 0.022, 0.016, 0.013];
+      padFreqs.forEach(function(f, i) {
         var osc = audioCtx.createOscillator();
-        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+        osc.type = 'sine';
         osc.frequency.value = f;
-        var g = audioCtx.createGain();
-        g.gain.value = 0.06 + Math.random() * 0.04;
-        // slow LFO on gain (breathing)
-        var lfo = audioCtx.createOscillator();
-        lfo.frequency.value = 0.05 + i * 0.013;
-        var lfoG = audioCtx.createGain();
-        lfoG.gain.value = 0.03;
-        lfo.connect(lfoG); lfoG.connect(g.gain);
-        // slow LFO on detune
+        // Very slow detune drift (imperceptible, just alive)
         var lfoD = audioCtx.createOscillator();
-        lfoD.frequency.value = 0.03 + i * 0.007;
+        lfoD.frequency.value = 0.025 + i * 0.008;
         var lfoDG = audioCtx.createGain();
-        lfoDG.gain.value = 3 + i;
+        lfoDG.gain.value = 1.2;
         lfoD.connect(lfoDG); lfoDG.connect(osc.detune);
-        osc.connect(g); g.connect(lp);
-        osc.start(); lfo.start(); lfoD.start();
+        // Gentle amplitude breathe
+        var g = audioCtx.createGain();
+        g.gain.value = padVols[i];
+        var lfoA = audioCtx.createOscillator();
+        lfoA.frequency.value = 0.035 + i * 0.007;
+        var lfoAG = audioCtx.createGain();
+        lfoAG.gain.value = padVols[i] * 0.25;
+        lfoA.connect(lfoAG); lfoAG.connect(g.gain);
+        osc.connect(g); g.connect(padBus);
+        osc.start(); lfoD.start(); lfoA.start();
       });
 
-      // subtle filtered noise wind
-      var bufSize = 2 * audioCtx.sampleRate;
-      var noiseBuffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
-      var nd = noiseBuffer.getChannelData(0);
-      for (var n = 0; n < bufSize; n++) nd[n] = (Math.random() * 2 - 1) * 0.5;
+      // Sub rumble — very deep pink noise (< 80 Hz), barely audible, just felt
+      var nBuf = audioCtx.createBuffer(1, 3 * sr, sr);
+      var nd = nBuf.getChannelData(0);
+      var b0=0, b1=0, b2=0;
+      for (var n = 0; n < nd.length; n++) {
+        var wh = Math.random() * 2 - 1;
+        b0 = 0.99886*b0 + wh*0.0555179;
+        b1 = 0.99332*b1 + wh*0.0750759;
+        b2 = 0.96900*b2 + wh*0.1538520;
+        nd[n] = (b0 + b1 + b2 + wh*0.0782232) * 0.11;
+      }
       var noise = audioCtx.createBufferSource();
-      noise.buffer = noiseBuffer; noise.loop = true;
-      var nFilt = audioCtx.createBiquadFilter();
-      nFilt.type = 'bandpass'; nFilt.frequency.value = 600; nFilt.Q.value = 0.7;
-      var nGain = audioCtx.createGain(); nGain.gain.value = 0.04;
-      noise.connect(nFilt); nFilt.connect(nGain); nGain.connect(lp);
+      noise.buffer = nBuf; noise.loop = true;
+      var nLp = audioCtx.createBiquadFilter();
+      nLp.type = 'lowpass'; nLp.frequency.value = 75; nLp.Q.value = 0.4;
+      var nG = audioCtx.createGain(); nG.gain.value = 0.09;
+      noise.connect(nLp); nLp.connect(nG); nG.connect(masterGain);
       noise.start();
+
+      // Sparkle pings — random high sine tones, soft attack + long exponential decay
+      var sparkleFreqs = [1318.5, 1046.5, 987.8, 1174.7, 880.0, 1567.0, 1318.5, 783.9];
+      function scheduleSparkle() {
+        var wait = 2800 + Math.random() * 5500;
+        _sparkleTimer = setTimeout(function() {
+          if (!audioCtx || audioMuted) { scheduleSparkle(); return; }
+          var t = audioCtx.currentTime;
+          var freq = sparkleFreqs[Math.floor(Math.random() * sparkleFreqs.length)];
+          var sOsc = audioCtx.createOscillator();
+          sOsc.type = 'sine';
+          sOsc.frequency.value = freq;
+          var sEnv = audioCtx.createGain();
+          sEnv.gain.setValueAtTime(0, t);
+          sEnv.gain.linearRampToValueAtTime(0.028, t + 0.06);
+          sEnv.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+          sOsc.connect(sEnv); sEnv.connect(revDelay); sEnv.connect(masterGain);
+          sOsc.start(t); sOsc.stop(t + 3.5);
+          scheduleSparkle();
+        }, wait);
+      }
+      scheduleSparkle();
+
     } catch (e) { audioCtx = null; }
   }
   function fadeAudio(target, dur) {
