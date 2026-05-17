@@ -1680,6 +1680,15 @@
     galleryEl.classList.add('is-open');
     galleryEl.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    // show swipe hint only on touch/mobile
+    var swipeHint = document.getElementById('xp-gal-swipe-hint');
+    if (swipeHint && window.matchMedia('(max-width: 480px)').matches) {
+      swipeHint.style.animation = 'none';
+      swipeHint.offsetHeight; // reflow to restart animation
+      swipeHint.style.animation = '';
+      swipeHint.style.display = 'flex';
+      setTimeout(function() { swipeHint.style.display = 'none'; }, 3200);
+    }
     var w = window.innerWidth, h = window.innerHeight;
     galScene = new THREE.Scene();
     galCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 200);
@@ -1934,18 +1943,43 @@
     if (galTargetProg < -0.3) galTargetProg = -0.3;
     if (galTargetProg > galMaxProg + 0.3) galTargetProg = galMaxProg + 0.3;
   }
-  var galTouchY = 0;
-  function onGTS(e) { galTouchY = e.touches[0].clientY; }
+  var galTouchY = 0, galTouchX = 0, galTouchMoved = false;
+  function onGTS(e) {
+    galTouchY = e.touches[0].clientY;
+    galTouchX = e.touches[0].clientX;
+    galTouchMoved = false;
+  }
   function onGTM(e) {
     if (e.cancelable) e.preventDefault();
     var ty = e.touches[0].clientY;
+    var tx = e.touches[0].clientX;
     var dy = galTouchY - ty;
+    var dx = galTouchX - tx;
+    galTouchMoved = true;
+    // horizontal swipe dominant → navigate prev/next panel
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+      // handled by touchend snap; update galTouchX only
+      galTouchX = tx;
+      return;
+    }
     galTargetProg += dy * 0.012;
     if (galTargetProg < -0.3) galTargetProg = -0.3;
     if (galTargetProg > galMaxProg + 0.3) galTargetProg = galMaxProg + 0.3;
     galTouchY = ty;
   }
-  function onGTE() {
+  function onGTE(e) {
+    if (e && e.changedTouches && e.changedTouches[0]) {
+      var dx = galTouchX - e.changedTouches[0].clientX;
+      var dy = galTouchY - e.changedTouches[0].clientY;
+      if (galTouchMoved && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        // horizontal swipe: prev or next
+        var dir = dx > 0 ? 1 : -1;
+        galTargetProg = Math.round(galTargetProg) + dir;
+        if (galTargetProg < 0) galTargetProg = 0;
+        if (galTargetProg > galMaxProg) galTargetProg = galMaxProg;
+        return;
+      }
+    }
     // snap to nearest
     galTargetProg = Math.round(galTargetProg);
     if (galTargetProg < 0) galTargetProg = 0;

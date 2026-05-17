@@ -1057,7 +1057,97 @@ button { font: inherit; }
   .xp-dock-row { grid-template-columns: 1fr; padding: 12px; }
   .xp-target-mid { border-left: none; border-right: none; border-top: 1px solid var(--xp-line); border-bottom: 1px solid var(--xp-line); }
   .xp-scroll-hint { display: none; }
+  /* stats: 2-col on tablet/large phone */
+  .xp-proj-stat { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  /* gallery trigger: full width */
+  .xp-gal-trigger { width: 100%; justify-content: center; box-sizing: border-box; }
 }
+
+/* ===== PHONE: ≤480px ===== */
+@media (max-width: 480px) {
+  /* Base spacing */
+  .xp-sec { padding: 12vh 18px; }
+  .xp-topbar { padding: 0 12px; top: 12px; }
+
+  /* Hero */
+  .xp-hero-h1 { font-size: clamp(36px, 11vw, 52px); margin-bottom: 20px; }
+  .xp-hero-sub { font-size: 14px; line-height: 1.5; margin-bottom: 28px; }
+  .xp-hero-meta { gap: 18px; margin-bottom: 36px; }
+  .xp-meta-num { font-size: clamp(22px, 6vw, 32px); }
+  .xp-meta-cell { padding-left: 12px; }
+  .xp-hero-foot { flex-wrap: wrap; gap: 8px; }
+
+  /* Eyebrow */
+  .xp-eyebrow { font-size: 9px; letter-spacing: 0.22em; margin-bottom: 14px; }
+
+  /* Project sections */
+  .xp-proj-h2 { font-size: clamp(26px, 8vw, 38px); margin-bottom: 16px; }
+  .xp-proj-desc { font-size: 14px; line-height: 1.55; }
+  .xp-proj-stat { grid-template-columns: repeat(2, 1fr); gap: 10px; padding-top: 16px; }
+  .xp-stat-n { font-size: 20px; }
+  .xp-stat-l { font-size: 8.5px; letter-spacing: 0.18em; }
+  .xp-proj-facts { gap: 8px; }
+  .xp-proj-tags { gap: 5px; margin-bottom: 20px; }
+  .xp-tag { font-size: 8.5px; padding: 3px 8px; }
+
+  /* Gallery trigger button */
+  .xp-gal-trigger { width: 100%; justify-content: center; box-sizing: border-box; padding: 14px 18px; font-size: 10px; }
+
+  /* Gallery overlay — topbar */
+  .xp-gallery-topbar { padding: 0 12px; top: 12px; }
+  .xp-gallery-topbar .xp-eyebrow { display: none; }
+
+  /* Gallery overlay — nav buttons (larger tap targets) */
+  .xp-gal-nav-btn { width: 44px; height: 44px; font-size: 18px; }
+
+  /* Gallery overlay — chip nav */
+  #xp-gal-chip-nav { font-size: 10px; letter-spacing: 0.16em; padding: 4px 10px; }
+
+  /* Gallery HUD */
+  .xp-gal-hud { padding: 14px 16px 20px; gap: 8px; }
+  .xp-gal-hud-tag { font-size: 8.5px; }
+  .xp-gal-hud-title { font-size: 16px; }
+  .xp-gal-hud-desc { font-size: 12px; line-height: 1.45; }
+
+  /* Stack section */
+  .xp-stack-h2 { font-size: clamp(28px, 8.5vw, 42px); margin-bottom: 12px; }
+  .xp-stack-sub { font-size: 14px; margin-bottom: 32px; }
+  .xp-stack-grid { grid-template-columns: 1fr; gap: 12px; }
+  .xp-card { padding: 18px; }
+  .xp-card-h3 { font-size: 14px; }
+  .xp-card-p { font-size: 12px; }
+
+  /* Connect / footer section */
+  .xp-foot-h2 { font-size: clamp(28px, 8.5vw, 46px); }
+  .xp-foot-sub { font-size: 14px; }
+  .xp-foot-link { font-size: 11px; letter-spacing: 0.18em; padding: 13px 22px; width: 100%; justify-content: center; box-sizing: border-box; }
+
+  /* Swipe hint in gallery */
+  .xp-gal-swipe-hint {
+    display: flex;
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--xp-mono);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: rgba(167,139,250,0.55);
+    text-transform: uppercase;
+    pointer-events: none;
+    white-space: nowrap;
+    animation: xp-swipe-hint-fade 3s ease forwards;
+  }
+}
+
+@keyframes xp-swipe-hint-fade {
+  0%   { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Swipe hint hidden by default (only shown via JS on mobile) */
+.xp-gal-swipe-hint { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .xp-blink, .xp-grain, .xp-nebula, .xp-foot-arrow, .xp-scroll-dot { animation: none !important; }
