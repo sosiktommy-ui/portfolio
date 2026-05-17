@@ -1906,7 +1906,7 @@
         // Always rotate to the clicked photo AND open lightbox immediately
         galTargetProg = idx;
         galProg = idx;
-        openGalLightbox(o);
+        openGalLightbox(galPanels[idx]);
         return;
       }
     }
