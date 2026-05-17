@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const COLORS = {
     blue: "#0A84FF",
     green: "#30D158",

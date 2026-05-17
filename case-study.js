@@ -1,4 +1,4 @@
-const baseTranslations = {
+﻿const baseTranslations = {
   en: {
     'meta.description': 'Premium case study landing page for an international QR ticketing and event operations platform.',
     'page.title': 'Case Study • International Event Ticketing Platform',

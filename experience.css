@@ -1,7 +1,7 @@
-/* =============================================================
-   /3D MODE — Immersive scroll experience
+﻿/* =============================================================
+   /3D MODE \002014  Immersive scroll experience
    Activetheory-style: fixed 3D stage + scrollable copy
-   Cool steel + violet accent · sniper-frame HUD
+   Cool steel + violet accent \0000B7  sniper-frame HUD
    ============================================================= */
 
 :root {
@@ -118,7 +118,7 @@ button { font: inherit; }
    BOOT
    ============================================================= */
 /* ============================================================= 
-   BOOT SCREEN — GLITCH EDITION
+   BOOT SCREEN \002014  GLITCH EDITION
    ============================================================= */
 @keyframes glitch-1 {
   0%,100%  { clip-path: inset(0 0 96% 0); transform: translate(-4px, 0); }
@@ -766,7 +766,7 @@ button { font: inherit; }
   font-family: var(--xp-mono);
 }
 .xp-proj-facts li::before {
-  content: "→";
+  content: "\002192 ";
   position: absolute;
   left: 0;
   top: 0;
@@ -1069,7 +1069,7 @@ button { font: inherit; }
 
 
 /* ============================================================= 
-   STACK SECTION — upgraded background, marquee, richer cards
+   STACK SECTION \002014  upgraded background, marquee, richer cards
    ============================================================= */
 .xp-sec-stack { position: relative; }
 .xp-stack-bg {
@@ -1198,12 +1198,12 @@ button { font: inherit; }
 .xp-marquee-track > span { display: inline-block; padding-right: 0; }
 @keyframes xp-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-/* clickable cursor on 3D panels — handled in JS but add hint */
+/* clickable cursor on 3D panels \002014  handled in JS but add hint */
 canvas#xp-canvas { cursor: none; }
 body.xp-body.is-hover-panel #xp-cursor .xp-cursor-ring { transform: scale(2.2); border-color: var(--xp-accent); }
 
 /* =============================================================
-   PROJECT GALLERY OVERLAY — 3D canvas orbit scene
+   PROJECT GALLERY OVERLAY \002014  3D canvas orbit scene
    ============================================================= */
 .xp-gallery {
   position: fixed;
