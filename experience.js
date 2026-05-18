@@ -2410,7 +2410,7 @@
     }
 
     ufoGroup.visible = false;
-    ufoGroup.scale.setScalar(0.55);
+    ufoGroup.scale.setScalar(0.85);
     scene.add(ufoGroup);
 
     // UFO flight state machine
@@ -2418,8 +2418,8 @@
     var ufoPhase = 0;      // 0..1 along arc
     var ufoTimer = 0;      // seconds until next flight
     var ufoNextDelay = 8 + Math.random() * 7;
-    var ufoStart = new THREE.Vector3(-14, 4 + Math.random() * 4, -6);
-    var ufoEnd   = new THREE.Vector3( 14, 2 + Math.random() * 4, -8);
+    var ufoStart = new THREE.Vector3(-14, 1 + Math.random() * 2, -6);
+    var ufoEnd   = new THREE.Vector3( 14, 0 + Math.random() * 2, -8);
     var ufoClicked = false;
 
     // Breach overlay
@@ -2441,8 +2441,9 @@
     }
 
     function resetUFO() {
-      ufoStart.set(-14, 3 + Math.random() * 4, -5 - Math.random() * 4);
-      ufoEnd.set(  14, 2 + Math.random() * 4, -5 - Math.random() * 4);
+      var cy = camY || 0;
+      ufoStart.set(-14, cy + 1 + Math.random() * 2, -5 - Math.random() * 3);
+      ufoEnd.set(  14, cy + 0.5 + Math.random() * 2, -5 - Math.random() * 3);
       if (Math.random() > 0.5) {
         var tmp = ufoStart.clone(); ufoStart.copy(ufoEnd); ufoEnd.copy(tmp);
       }
@@ -2450,16 +2451,13 @@
       ufoClicked = false;
     }
 
-    // Click on canvas
-    var canvasEl = document.getElementById('xp-canvas');
-    if (canvasEl) {
-      canvasEl.addEventListener('click', function () {
-        if (ufoState === 'flying' && !ufoClicked) {
-          ufoClicked = true;
-          showBreach();
-        }
-      });
-    }
+    // Click/tap anywhere when UFO is flying
+    document.addEventListener('click', function () {
+      if (ufoState === 'flying' && !ufoClicked) {
+        ufoClicked = true;
+        showBreach();
+      }
+    });
 
     sceneRefs.ufoAnimate = function (dt) {
       if (!dt || dt > 0.1) dt = 0.016;
