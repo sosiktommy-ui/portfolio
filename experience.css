@@ -1110,7 +1110,7 @@ button { font: inherit; }
     margin-bottom: 14px;
     line-height: 1.05;
   }
-  .xp-proj-desc { font-size: 13.5px; line-height: 1.6; margin-bottom: 18px; }
+  .xp-proj-desc { font-size: 13.5px; line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
   .xp-proj-facts { gap: 8px; margin-bottom: 20px; }
   .xp-proj-facts li { font-size: 12px; }
   .xp-proj-tags { gap: 5px; margin-bottom: 18px; }

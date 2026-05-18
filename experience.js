@@ -807,7 +807,9 @@
       var sec = sections[s];
       var r = sec.getBoundingClientRect();
       var midDist = Math.abs((r.top + r.height/2) - window.innerHeight/2);
-      if (midDist < window.innerHeight * 0.55) sec.classList.add('is-in');
+      // also trigger for tall sections (taller than viewport) when top enters view
+      var topInView = r.top < window.innerHeight * 0.85 && r.bottom > window.innerHeight * 0.15;
+      if (midDist < window.innerHeight * 0.55 || topInView) sec.classList.add('is-in');
     }
 
     // scroll hint fade
@@ -2235,7 +2237,7 @@
   if (stackSec && 'IntersectionObserver' in window) {
     var co = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) { if (e.isIntersecting) { initCounters(); co.disconnect(); } });
-    }, { threshold: 0.35 });
+    }, { threshold: 0.05 });
     co.observe(stackSec);
   }
 
