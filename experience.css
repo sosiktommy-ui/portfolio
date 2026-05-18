@@ -1762,6 +1762,27 @@ body.xp-body.is-hover-panel #xp-cursor .xp-cursor-ring { transform: scale(2.2); 
   margin-top: 28px;
   margin-bottom: 12px;
 }
+.xp-cta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border: 1px solid rgba(167,139,250,0.55);
+  border-radius: 26px;
+  color: #fff;
+  font-family: var(--xp-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: rgba(167,139,250,0.12);
+  cursor: pointer;
+  transition: border-color 0.25s, background 0.25s, color 0.25s;
+  outline: none;
+}
+.xp-cta-pill:hover {
+  border-color: rgba(167,139,250,0.9);
+  background: rgba(167,139,250,0.22);
+  color: #fff;
+}
 .xp-cv-btn {
   display: inline-flex;
   align-items: center;

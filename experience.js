@@ -2416,7 +2416,7 @@
     var ufoState = 'idle'; // idle | flying | done
     var ufoPhase = 0;      // 0..1 along arc
     var ufoTimer = 0;      // seconds until next flight
-    var ufoNextDelay = 40 + Math.random() * 50;
+    var ufoNextDelay = 8 + Math.random() * 7;
     var ufoStart = new THREE.Vector3(-14, 4 + Math.random() * 4, -6);
     var ufoEnd   = new THREE.Vector3( 14, 2 + Math.random() * 4, -8);
     var ufoClicked = false;
