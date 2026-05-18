@@ -863,8 +863,10 @@
     mouseNY = (e.clientY / window.innerHeight) * 2 - 1;
   });
 
+  var _prevTickT = 0;
   function tick() {
     var t = clock.getElapsedTime();
+    var _dt = t - _prevTickT; _prevTickT = t;
 
     // smooth camera lerp
     camY += (targetCamY - camY) * 0.08;
@@ -928,6 +930,9 @@
     });
 
     updateHeroVisibility();
+
+    if (typeof sceneRefs.ufoAnimate === 'function') sceneRefs.ufoAnimate(_dt);
+    if (typeof sceneRefs.clickBurstsUpdate === 'function') sceneRefs.clickBurstsUpdate(t);
 
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
@@ -2233,5 +2238,401 @@
     }, { threshold: 0.35 });
     co.observe(stackSec);
   }
+
+  // -----------------------------------------------------------
+  // 23. PROGRESS BAR
+  // -----------------------------------------------------------
+  (function () {
+    var fill = document.getElementById('xp-progress-fill');
+    if (!fill) return;
+    function updateProgress() {
+      var scroller = document.getElementById('xp-scroller');
+      if (!scroller) return;
+      var maxScroll = scroller.scrollHeight - scroller.clientHeight;
+      if (maxScroll <= 0) { fill.style.width = '0%'; return; }
+      fill.style.width = Math.min(100, (scroller.scrollTop / maxScroll) * 100) + '%';
+    }
+    var scroller = document.getElementById('xp-scroller');
+    if (scroller) scroller.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+  })();
+
+  // -----------------------------------------------------------
+  // 24. LIVE CLOCK (Warsaw time)
+  // -----------------------------------------------------------
+  (function () {
+    var clockEl = document.getElementById('xp-clock');
+    if (!clockEl) return;
+    var blinkOn = true;
+    function updateClock() {
+      var now = new Date();
+      var h = now.toLocaleString('en-GB', { timeZone: 'Europe/Warsaw', hour: '2-digit', hour12: false });
+      var m = now.toLocaleString('en-GB', { timeZone: 'Europe/Warsaw', minute: '2-digit' });
+      blinkOn = !blinkOn;
+      clockEl.textContent = h + (blinkOn ? ':' : '\u2009') + m + ' WA';
+    }
+    updateClock();
+    setInterval(updateClock, 500);
+  })();
+
+  // -----------------------------------------------------------
+  // 25. BACK TO TOP BUTTON
+  // -----------------------------------------------------------
+  (function () {
+    var btn = document.getElementById('xp-back-top');
+    if (!btn) return;
+    var scroller = document.getElementById('xp-scroller');
+    function checkShow() {
+      if (!scroller) return;
+      btn.classList.toggle('xp-back-top--visible', scroller.scrollTop > 300);
+    }
+    if (scroller) scroller.addEventListener('scroll', checkShow, { passive: true });
+    btn.addEventListener('click', function () {
+      if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  // -----------------------------------------------------------
+  // 26. ANIMATED STAT COUNTERS (project sections)
+  // -----------------------------------------------------------
+  (function () {
+    var stats = document.querySelectorAll('#xp-scroller .xp-stat-n');
+    if (!stats.length || !('IntersectionObserver' in window)) return;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        var raw = el.textContent.trim();
+        var num = parseInt(raw, 10);
+        if (isNaN(num) || num <= 0 || num > 9999) return;
+        observer.unobserve(el);
+        var start = 0;
+        var duration = 900;
+        var startTime = performance.now();
+        function step(now) {
+          var elapsed = now - startTime;
+          var progress = Math.min(1, elapsed / duration);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = String(Math.round(start + (num - start) * eased));
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = String(num);
+        }
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.5 });
+    stats.forEach(function (el) { observer.observe(el); });
+  })();
+
+  // -----------------------------------------------------------
+  // 27. KONAMI CODE
+  // -----------------------------------------------------------
+  (function () {
+    var seq = [38,38,40,40,37,39,37,39,66,65];
+    var pos = 0;
+    var overlay = document.getElementById('xp-konami-overlay');
+    if (!overlay) return;
+    var timer = null;
+    document.addEventListener('keydown', function (e) {
+      if (e.keyCode === seq[pos]) {
+        pos++;
+        if (pos === seq.length) {
+          pos = 0;
+          overlay.removeAttribute('aria-hidden');
+          overlay.classList.add('xp-konami--active');
+          document.body.classList.add('xp-konami-active');
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.classList.remove('xp-konami--active');
+            document.body.classList.remove('xp-konami-active');
+          }, 4000);
+        }
+      } else {
+        pos = 0;
+      }
+    });
+  })();
+
+  // -----------------------------------------------------------
+  // 28. UFO EASTER EGG
+  // -----------------------------------------------------------
+  (function () {
+    if (IS_MOBILE) return;
+    var UFO_FACTS = [
+      'This system processed over 148,000 fake guest names before 9am.',
+      'The QR scanner was once triggered by a cat photo. It worked.',
+      'One admin accidentally sent 11,000 Telegram notifications at 3am.',
+      'The database once had 7 different spellings of "Rotterdam".',
+      'Vladyslav\u2019s first production deploy was at 04:37. It worked first try.',
+      'This portfolio was built during 3 separate power outages.',
+      'Dmitry Ganj once approved a feature via voice message from a boat.',
+      'The AI voice bot once booked a reservation for a dog named Boris.',
+      'Total lines of code: somewhere between 40,000 and way too many.',
+      'The ticketing system once scanned the same QR 73 times in 2 minutes.'
+    ];
+
+    // Build UFO mesh
+    var ufoGroup = new THREE.Group();
+
+    // Disc body
+    var discGeo = new THREE.CylinderGeometry(1.1, 1.1, 0.28, 32);
+    var discMat = new THREE.MeshBasicMaterial({ color: 0xb8a4f0, wireframe: false });
+    var disc = new THREE.Mesh(discGeo, discMat);
+    ufoGroup.add(disc);
+
+    // Dome
+    var domeGeo = new THREE.SphereGeometry(0.62, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5);
+    var domeMat = new THREE.MeshBasicMaterial({ color: 0xe2d9ff, transparent: true, opacity: 0.6 });
+    var dome = new THREE.Mesh(domeGeo, domeMat);
+    dome.position.y = 0.14;
+    ufoGroup.add(dome);
+
+    // Glow ring
+    var ringGeo = new THREE.TorusGeometry(1.18, 0.07, 8, 40);
+    var ringMat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.85 });
+    var ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI * 0.5;
+    ring.position.y = -0.12;
+    ufoGroup.add(ring);
+
+    // Bottom lights
+    var lightColors = [0xff8aff, 0x88f8ff, 0xffed6f, 0xa78bfa, 0xff8aff, 0x88f8ff, 0xffed6f, 0xa78bfa];
+    var ufoLights = [];
+    for (var li = 0; li < 8; li++) {
+      var lGeo = new THREE.SphereGeometry(0.1, 8, 8);
+      var lMat = new THREE.MeshBasicMaterial({ color: lightColors[li], transparent: true, opacity: 0.9 });
+      var lMesh = new THREE.Mesh(lGeo, lMat);
+      var angle = (li / 8) * Math.PI * 2;
+      lMesh.position.set(Math.cos(angle) * 0.85, -0.18, Math.sin(angle) * 0.85);
+      ufoGroup.add(lMesh);
+      ufoLights.push({ mesh: lMesh, mat: lMat });
+    }
+
+    ufoGroup.visible = false;
+    ufoGroup.scale.setScalar(0.55);
+    scene.add(ufoGroup);
+
+    // UFO flight state machine
+    var ufoState = 'idle'; // idle | flying | done
+    var ufoPhase = 0;      // 0..1 along arc
+    var ufoTimer = 0;      // seconds until next flight
+    var ufoNextDelay = 40 + Math.random() * 50;
+    var ufoStart = new THREE.Vector3(-14, 4 + Math.random() * 4, -6);
+    var ufoEnd   = new THREE.Vector3( 14, 2 + Math.random() * 4, -8);
+    var ufoClicked = false;
+
+    // Breach overlay
+    var breachEl = document.getElementById('xp-ufo-breach');
+    var factEl   = document.getElementById('xp-ufo-fact');
+    var closeBtn = document.getElementById('xp-ufo-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        breachEl.setAttribute('aria-hidden', 'true');
+        breachEl.classList.remove('xp-ufo-breach--active');
+      });
+    }
+
+    function showBreach() {
+      if (!breachEl || !factEl) return;
+      factEl.textContent = UFO_FACTS[Math.floor(Math.random() * UFO_FACTS.length)];
+      breachEl.removeAttribute('aria-hidden');
+      breachEl.classList.add('xp-ufo-breach--active');
+    }
+
+    function resetUFO() {
+      ufoStart.set(-14, 3 + Math.random() * 4, -5 - Math.random() * 4);
+      ufoEnd.set(  14, 2 + Math.random() * 4, -5 - Math.random() * 4);
+      if (Math.random() > 0.5) {
+        var tmp = ufoStart.clone(); ufoStart.copy(ufoEnd); ufoEnd.copy(tmp);
+      }
+      ufoPhase = 0;
+      ufoClicked = false;
+    }
+
+    // Click on canvas
+    var canvasEl = document.getElementById('xp-canvas');
+    if (canvasEl) {
+      canvasEl.addEventListener('click', function () {
+        if (ufoState === 'flying' && !ufoClicked) {
+          ufoClicked = true;
+          showBreach();
+        }
+      });
+    }
+
+    sceneRefs.ufoAnimate = function (dt) {
+      if (!dt || dt > 0.1) dt = 0.016;
+      ufoTimer += dt;
+
+      if (ufoState === 'idle') {
+        if (ufoTimer >= ufoNextDelay) {
+          ufoState = 'flying';
+          ufoTimer = 0;
+          resetUFO();
+          ufoGroup.visible = true;
+        }
+        return;
+      }
+
+      if (ufoState === 'flying') {
+        ufoPhase += dt * 0.12;
+        if (ufoPhase >= 1) {
+          ufoPhase = 1;
+          ufoState = 'done';
+          ufoGroup.visible = false;
+          ufoNextDelay = 40 + Math.random() * 50;
+          ufoTimer = 0;
+        }
+
+        // Lerp position along arc with slight sine bob
+        ufoGroup.position.lerpVectors(ufoStart, ufoEnd, ufoPhase);
+        ufoGroup.position.y += Math.sin(ufoPhase * Math.PI) * 1.8;
+
+        // Rotate disc
+        disc.rotation.y += dt * 1.2;
+        ring.rotation.z += dt * 2.0;
+
+        // Pulse lights
+        var lt = performance.now() * 0.003;
+        ufoLights.forEach(function (l, i) {
+          l.mat.opacity = 0.5 + 0.5 * Math.abs(Math.sin(lt * 3 + i * 0.7));
+        });
+
+        // Face direction of travel
+        var dir = new THREE.Vector3().subVectors(ufoEnd, ufoStart).normalize();
+        ufoGroup.lookAt(ufoGroup.position.clone().add(dir));
+      }
+
+      if (ufoState === 'done') {
+        ufoState = 'idle';
+      }
+    };
+  })();
+
+  // -----------------------------------------------------------
+  // 29. CLICK BURST PARTICLES
+  // -----------------------------------------------------------
+  (function () {
+    var BURST_COUNT = 60;
+    var burstGeo = new THREE.BufferGeometry();
+    var positions = new Float32Array(BURST_COUNT * 3);
+    var velocities = [];
+    var burstActive = false;
+    var burstT = 0;
+
+    for (var i = 0; i < BURST_COUNT; i++) {
+      positions[i * 3] = 0;
+      positions[i * 3 + 1] = 0;
+      positions[i * 3 + 2] = 0;
+      velocities.push(new THREE.Vector3(
+        (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 3
+      ));
+    }
+
+    burstGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    var burstMat = new THREE.PointsMaterial({
+      color: 0xa78bfa,
+      size: 0.06,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    var burstPoints = new THREE.Points(burstGeo, burstMat);
+    scene.add(burstPoints);
+
+    function spawnBurst(worldPos) {
+      burstActive = true;
+      burstT = 0;
+      var pos = burstGeo.attributes.position.array;
+      for (var i = 0; i < BURST_COUNT; i++) {
+        pos[i * 3]     = worldPos.x;
+        pos[i * 3 + 1] = worldPos.y;
+        pos[i * 3 + 2] = worldPos.z;
+        velocities[i].set(
+          (Math.random() - 0.5) * 4,
+          (Math.random() - 0.5) * 4,
+          (Math.random() - 0.5) * 4
+        );
+      }
+      burstGeo.attributes.position.needsUpdate = true;
+      burstMat.opacity = 1;
+    }
+
+    sceneRefs.clickBurstsUpdate = function (t) {
+      if (!burstActive) return;
+      burstT += 0.025;
+      if (burstT >= 1) {
+        burstActive = false;
+        burstMat.opacity = 0;
+        return;
+      }
+      var fade = 1 - burstT;
+      burstMat.opacity = fade * 0.9;
+      var pos = burstGeo.attributes.position.array;
+      for (var i = 0; i < BURST_COUNT; i++) {
+        pos[i * 3]     += velocities[i].x * 0.018;
+        pos[i * 3 + 1] += velocities[i].y * 0.018;
+        pos[i * 3 + 2] += velocities[i].z * 0.018;
+      }
+      burstGeo.attributes.position.needsUpdate = true;
+    };
+
+    // Raycaster for world-pos click (desktop only)
+    if (!IS_MOBILE) {
+      var canvasEl = document.getElementById('xp-canvas');
+      var raycasterB = new THREE.Raycaster();
+      var planeB = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+      if (canvasEl) {
+        canvasEl.addEventListener('click', function (e) {
+          // Skip if clicking a UI element
+          if (e.target !== canvasEl) return;
+          var mx = (e.clientX / window.innerWidth)  *  2 - 1;
+          var my = (e.clientY / window.innerHeight) * -2 + 1;
+          raycasterB.setFromCamera({ x: mx, y: my }, camera);
+          var hitPt = new THREE.Vector3();
+          raycasterB.ray.intersectPlane(planeB, hitPt);
+          spawnBurst(hitPt);
+        });
+      }
+    }
+  })();
+
+  // -----------------------------------------------------------
+  // 30. TILT PARALLAX (mobile DeviceOrientation)
+  // -----------------------------------------------------------
+  (function () {
+    if (!IS_MOBILE) return;
+    var tiltEnabled = false;
+    function onOrient(e) {
+      if (!sceneRefs.stars) return;
+      var beta  = (e.beta  || 0) / 90;  // -1..1
+      var gamma = (e.gamma || 0) / 90;  // -1..1
+      sceneRefs.stars.rotation.x = beta  * 0.15;
+      sceneRefs.stars.rotation.z = gamma * 0.15;
+    }
+    function requestPerm() {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(function (state) {
+            if (state === 'granted') {
+              window.addEventListener('deviceorientation', onOrient, { passive: true });
+              tiltEnabled = true;
+            }
+          }).catch(function () {});
+      } else {
+        window.addEventListener('deviceorientation', onOrient, { passive: true });
+        tiltEnabled = true;
+      }
+    }
+    // Request on first touch
+    document.addEventListener('touchstart', function tryTilt() {
+      if (!tiltEnabled) requestPerm();
+      document.removeEventListener('touchstart', tryTilt);
+    }, { passive: true, once: true });
+  })();
 
 })();
