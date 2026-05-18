@@ -1111,9 +1111,9 @@ button { font: inherit; }
     line-height: 1.05;
   }
   .xp-proj-desc { font-size: 13.5px; line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .xp-proj-facts li:nth-child(n+4) { display: none; }
+  .xp-proj-facts li:nth-child(n+3) { display: none; }
   .xp-proj-facts { gap: 8px; margin-bottom: 20px; }
-  .xp-proj-facts li { font-size: 12px; }
+  .xp-proj-facts li { font-size: 12px; font-family: var(--xp-sans); }
   .xp-proj-tags { gap: 5px; margin-bottom: 18px; }
   .xp-proj-tags span { font-size: 8.5px; padding: 4px 10px; letter-spacing: 0.18em; }
   .xp-proj-stat {
