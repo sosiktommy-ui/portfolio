@@ -2359,7 +2359,6 @@
   // 28. UFO EASTER EGG
   // -----------------------------------------------------------
   (function () {
-    if (IS_MOBILE) return;
     var UFO_FACTS = [
       'This system processed over 148,000 fake guest names before 9am.',
       'The QR scanner was once triggered by a cat photo. It worked.',
@@ -2482,7 +2481,7 @@
           ufoPhase = 1;
           ufoState = 'done';
           ufoGroup.visible = false;
-          ufoNextDelay = 40 + Math.random() * 50;
+          ufoNextDelay = 10 + Math.random() * 10;
           ufoTimer = 0;
         }
 
